@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      accommodation_rooms: {
+        Row: {
+          building: string | null
+          capacity: number
+          created_at: string | null
+          description: string | null
+          floor: string | null
+          id: string
+          name: string
+          occupied: number | null
+        }
+        Insert: {
+          building?: string | null
+          capacity: number
+          created_at?: string | null
+          description?: string | null
+          floor?: string | null
+          id?: string
+          name: string
+          occupied?: number | null
+        }
+        Update: {
+          building?: string | null
+          capacity?: number
+          created_at?: string | null
+          description?: string | null
+          floor?: string | null
+          id?: string
+          name?: string
+          occupied?: number | null
+        }
+        Relationships: []
+      }
       brotherhood_events: {
         Row: {
           capacity: number | null
@@ -335,6 +368,81 @@ export type Database = {
           status?: string | null
           submitted_at?: string | null
           submitted_by?: string | null
+        }
+        Relationships: []
+      }
+      room_allocations: {
+        Row: {
+          created_at: string | null
+          date_assigned: string | null
+          id: string
+          notes: string | null
+          person_id: string | null
+          room_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_assigned?: string | null
+          id?: string
+          notes?: string | null
+          person_id?: string | null
+          room_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date_assigned?: string | null
+          id?: string
+          notes?: string | null
+          person_id?: string | null
+          room_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_allocations_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "women_attendees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_allocations_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "accommodation_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      women_attendees: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          email: string | null
+          home_church: string | null
+          id: string
+          name: string
+          phone: string | null
+          special_needs: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          home_church?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          special_needs?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          home_church?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          special_needs?: string | null
         }
         Relationships: []
       }

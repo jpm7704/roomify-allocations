@@ -1,12 +1,13 @@
 
 import { useState } from 'react';
-import { Building, User, Trash2, ArrowRight } from 'lucide-react';
+import { Building, User, Trash2, ArrowRight, CalendarIcon, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Room } from './RoomCard';
 import { Person } from './PersonCard';
+import { format } from 'date-fns';
 
 export interface Allocation {
   id: string;
@@ -15,6 +16,7 @@ export interface Allocation {
   person: Person;
   room: Room;
   dateAssigned: string;
+  notes?: string;
 }
 
 interface AllocationCardProps {
@@ -53,7 +55,8 @@ const AllocationCard = ({ allocation, onRemove, onClick }: AllocationCardProps) 
       onClick={() => onClick?.(allocation)}
     >
       <CardHeader className="p-6 pb-4">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
+          <CalendarIcon className="h-4 w-4 mr-2" />
           Assigned on {formattedDate}
         </CardTitle>
       </CardHeader>
@@ -89,6 +92,13 @@ const AllocationCard = ({ allocation, onRemove, onClick }: AllocationCardProps) 
             </div>
           </div>
         </div>
+        
+        {allocation.notes && (
+          <div className="mb-4 p-2 bg-muted/30 rounded-md text-sm flex items-start">
+            <FileText className="h-4 w-4 mt-0.5 mr-2 text-muted-foreground" />
+            <p className="text-muted-foreground">{allocation.notes}</p>
+          </div>
+        )}
         
         <div className="flex items-center justify-between">
           <div className="flex items-center">
