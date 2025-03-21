@@ -1,136 +1,98 @@
 
-import { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building, ChevronRight, UserCircle, Lock, Calendar } from 'lucide-react';
+import { Building, Users, ArrowRight, LogIn, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import IndustrySelector, { Industry } from '@/components/IndustrySelector';
-
-// Step type
-type OnboardingStep = 'welcome' | 'industry' | 'final';
+import { Card, CardContent } from '@/components/ui/card';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
-  const [selectedIndustry, setSelectedIndustry] = useState<Industry | null>(null);
 
-  const handleIndustrySelect = (industry: Industry) => {
-    setSelectedIndustry(industry);
-    
-    // If reservation is selected, navigate directly to reservations
-    if (industry === 'reservation') {
-      localStorage.setItem('onboardingCompleted', 'true');
-      navigate('/reservations');
-      return;
-    }
-    
-    // Store the selected industry in localStorage
-    localStorage.setItem('selectedIndustry', industry);
-    setCurrentStep('final');
-  };
-
-  const handleGetStarted = () => {
-    setCurrentStep('industry');
-  };
-
-  const handleCreateAccount = () => {
-    localStorage.setItem('onboardingCompleted', 'true');
-    navigate('/register');
-  };
-
-  const handleLogin = () => {
-    localStorage.setItem('onboardingCompleted', 'true');
-    navigate('/login');
-  };
-
-  const renderWelcomeStep = () => (
-    <div className="max-w-lg mx-auto text-center">
-      <div className="rounded-full bg-primary/10 p-4 w-16 h-16 mx-auto mb-6 flex items-center justify-center">
-        <Building className="h-8 w-8 text-primary" />
-      </div>
-      
-      <h1 className="text-4xl font-bold mb-4">Welcome to RoomAlloc</h1>
-      
-      <p className="text-lg text-muted-foreground mb-8">
-        Simplify room allocation management for your organization. 
-        Assign people to rooms, track occupancy, and manage accommodations with ease.
-      </p>
-      
-      <Button size="lg" onClick={handleGetStarted} className="px-8">
-        Get Started
-        <ChevronRight className="ml-2 h-4 w-4" />
-      </Button>
-    </div>
-  );
-
-  const renderIndustryStep = () => (
-    <IndustrySelector onSelectIndustry={handleIndustrySelect} />
-  );
-
-  const renderFinalStep = () => (
-    <div className="max-w-lg mx-auto text-center">
-      <div className="rounded-full bg-primary/10 p-4 w-16 h-16 mx-auto mb-6 flex items-center justify-center">
-        <Building className="h-8 w-8 text-primary" />
-      </div>
-      
-      <h1 className="text-3xl font-bold mb-4">
-        {selectedIndustry === 'hotel' && 'Optimize Your Hotel'}
-        {selectedIndustry === 'farming' && 'Manage Farm Accommodations'}
-        {selectedIndustry === 'education' && 'Streamline Student Housing'}
-        {selectedIndustry === 'healthcare' && 'Efficient Hospital Room Management'}
-        {selectedIndustry === 'general' && 'Ready to Get Started'}
-      </h1>
-      
-      <p className="text-lg text-muted-foreground mb-8">
-        {selectedIndustry === 'hotel' && 'Perfect for hotels, lodges and guest houses in Zimbabwe. Integrate with ZTA booking systems and enable EcoCash payments.'}
-        {selectedIndustry === 'farming' && 'Designed for seasonal farmworker housing with SMS approvals and contract-based assignments.'}
-        {selectedIndustry === 'education' && 'Built for universities like UZ, NUST, MSU and CUT with student portal integration.'}
-        {selectedIndustry === 'healthcare' && 'Tailored for hospitals like Parirenyatwa and Mpilo with urgency-based bed allocation.'}
-        {selectedIndustry === 'general' && 'Your workspace is set up and ready for room allocation management.'}
-      </p>
-      
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Button 
-          variant="outline" 
-          size="lg" 
-          onClick={handleLogin}
-          className="gap-2"
-        >
-          <Lock className="h-4 w-4" />
-          Log In
-        </Button>
-        
-        <Button 
-          size="lg" 
-          onClick={handleCreateAccount}
-          className="gap-2"
-        >
-          <UserCircle className="h-4 w-4" />
-          Create Account
-        </Button>
-      </div>
-    </div>
-  );
+  const features = [
+    {
+      title: 'Room Management',
+      description: 'Efficiently manage rooms and track their capacity, building, and other details.',
+      icon: <Building className="h-12 w-12 text-primary" />,
+    },
+    {
+      title: 'People Management',
+      description: 'Keep track of attendees, their departments, and special requirements.',
+      icon: <Users className="h-12 w-12 text-primary" />,
+    },
+    {
+      title: 'Smart Allocations',
+      description: 'Easily assign people to rooms with our intelligent allocation system.',
+      icon: <ArrowRight className="h-12 w-12 text-primary" />,
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex flex-col">
-      <header className="p-6">
-        <div className="flex items-center gap-2">
-          <Building className="h-6 w-6 text-primary" />
-          <span className="font-bold text-xl">RoomAlloc</span>
-        </div>
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Header */}
+      <header className="w-full py-4 px-6 flex justify-between items-center border-b">
+        <h1 className="text-2xl font-bold text-foreground">Room Allocator</h1>
       </header>
-      
-      <main className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-4xl">
-          {currentStep === 'welcome' && renderWelcomeStep()}
-          {currentStep === 'industry' && renderIndustryStep()}
-          {currentStep === 'final' && renderFinalStep()}
+
+      <main className="flex-1 flex flex-col items-center justify-center p-6 max-w-5xl mx-auto w-full">
+        {/* Welcome Section */}
+        <div className="text-center space-y-4 mb-12 animate-fade-in">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+            Welcome to <span className="text-primary">Room Allocator</span>
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Simplify accommodation management with our intuitive room allocation system.
+          </p>
+        </div>
+
+        {/* Features Carousel */}
+        <Carousel className="w-full max-w-md mb-12">
+          <CarouselContent>
+            {features.map((feature, index) => (
+              <CarouselItem key={index}>
+                <Card className="border-none shadow-none">
+                  <CardContent className="flex flex-col items-center justify-center p-6 text-center space-y-4">
+                    <div className="p-4 bg-primary/10 rounded-full">
+                      {feature.icon}
+                    </div>
+                    <h3 className="text-xl font-semibold">{feature.title}</h3>
+                    <p className="text-muted-foreground">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious className="left-0" />
+          <CarouselNext className="right-0" />
+        </Carousel>
+
+        {/* Auth Buttons */}
+        <div className="space-y-4 w-full max-w-md animate-slide-in">
+          <Button 
+            onClick={() => navigate('/login')} 
+            className="w-full py-6 text-lg" 
+            size="lg"
+          >
+            <LogIn className="mr-2 h-5 w-5" /> Sign In
+          </Button>
+          <Button
+            onClick={() => navigate('/register')}
+            variant="outline"
+            className="w-full py-6 text-lg"
+            size="lg"
+          >
+            <UserPlus className="mr-2 h-5 w-5" /> Create Account
+          </Button>
+          <div className="text-center mt-4">
+            <Button 
+              variant="link" 
+              onClick={() => navigate('/')}
+            >
+              Continue as Guest
+            </Button>
+          </div>
         </div>
       </main>
-      
-      <footer className="p-6 text-center text-sm text-muted-foreground">
-        <p>RoomAlloc — Optimized for Zimbabwean industries</p>
-      </footer>
     </div>
   );
 };

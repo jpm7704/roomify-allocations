@@ -12,7 +12,7 @@ const Index = () => {
   const navigate = useNavigate();
   
   // Fetch rooms data
-  const { data: rooms, isLoading: roomsLoading } = useQuery({
+  const { data: rooms } = useQuery({
     queryKey: ['rooms'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -25,7 +25,7 @@ const Index = () => {
   });
 
   // Fetch people data
-  const { data: people, isLoading: peopleLoading } = useQuery({
+  const { data: people } = useQuery({
     queryKey: ['people'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -38,7 +38,7 @@ const Index = () => {
   });
 
   // Fetch allocations data
-  const { data: allocations, isLoading: allocationsLoading } = useQuery({
+  const { data: allocations } = useQuery({
     queryKey: ['allocations'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -82,8 +82,6 @@ const Index = () => {
       href: '/allocations'
     }
   ];
-
-  const isLoading = roomsLoading || peopleLoading || allocationsLoading;
 
   return (
     <Layout>
@@ -139,19 +137,9 @@ const Index = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {isLoading ? (
-                    <div className="animate-pulse">
-                      <div className="h-7 w-12 bg-muted rounded"></div>
-                      <div className="h-4 w-40 bg-muted rounded mt-2"></div>
-                      <div className="h-3 w-24 bg-muted rounded mt-5"></div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="text-3xl font-bold">{stat.value}</div>
-                      <p className="text-sm text-muted-foreground mt-1">{stat.description}</p>
-                      <p className="text-xs font-medium text-primary mt-4">{stat.change}</p>
-                    </>
-                  )}
+                  <div className="text-3xl font-bold">{stat.value}</div>
+                  <p className="text-sm text-muted-foreground mt-1">{stat.description}</p>
+                  <p className="text-xs font-medium text-primary mt-4">{stat.change}</p>
                 </CardContent>
               </Card>
             ))}
@@ -212,7 +200,7 @@ const Index = () => {
             <div className="flex flex-wrap gap-4 justify-center">
               <Button 
                 size="lg" 
-                className="rounded-md hover:translate-y-[-2px] transition-all duration-300"
+                className="rounded-md animate-pulse hover:animate-none"
                 onClick={() => navigate('/rooms')}
               >
                 <Building className="mr-2 h-5 w-5" />

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Building, Home, UserRound, Users, User } from 'lucide-react';
+import { Building, Home, UserRound, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Sidebar from './layout/Sidebar';
 import MobileHeader from './layout/MobileHeader';
@@ -39,11 +39,10 @@ const Layout = ({ children }: LayoutProps) => {
   };
   
   const navItems = [
-    { to: '/app', icon: <Home className="w-5 h-5" />, label: 'Home' },
+    { to: '/', icon: <Home className="w-5 h-5" />, label: 'Home' },
     { to: '/rooms', icon: <Building className="w-5 h-5" />, label: 'Rooms' },
     { to: '/people', icon: <UserRound className="w-5 h-5" />, label: 'People' },
     { to: '/allocations', icon: <Users className="w-5 h-5" />, label: 'Allocations' },
-    { to: '/profile', icon: <User className="w-5 h-5" />, label: 'Profile' },
   ];
 
   return (

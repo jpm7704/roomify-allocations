@@ -1,183 +1,131 @@
 
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Building, ArrowLeft, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft, LogIn, Eye, EyeOff } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Checkbox } from '@/components/ui/checkbox';
 
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    
-    if (!email || !password) {
-      setError('Please enter both email and password');
-      toast.error('Please enter both email and password');
-      return;
-    }
-    
-    setLoading(true);
-    
+    setIsLoading(true);
+
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      
-      if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          setError('Invalid email or password. Please check your credentials and try again.');
-          toast.error('Invalid email or password');
-        } else {
-          setError(error.message);
-          toast.error(error.message || 'Failed to log in');
-        }
-        console.error('Login error:', error);
-        return;
-      }
-      
-      toast.success('Login successful!');
-      navigate('/app');
+
+      if (error) throw error;
+
+      toast.success('Logged in successfully');
+      navigate('/rooms');
     } catch (error: any) {
-      setError(error.message || 'An unexpected error occurred');
-      toast.error(error.message || 'Failed to log in');
-      console.error('Login catch error:', error);
+      toast.error(error.message || 'Failed to sign in');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex flex-col">
-      <header className="p-6">
-        <div className="flex items-center gap-2">
-          <Building className="h-6 w-6 text-primary" />
-          <span className="font-bold text-xl">RoomAlloc</span>
-        </div>
+    <div className="min-h-screen flex flex-col bg-background">
+      <header className="w-full py-4 px-6 flex items-center border-b">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/onboarding')} className="mr-4">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-2xl font-bold text-foreground">Sign In</h1>
       </header>
-      
+
       <main className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md space-y-8">
-          <div className="text-center">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => navigate('/onboarding')}
-              className="mb-4"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            
-            <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
-            <p className="text-muted-foreground mb-8">
-              Log in to continue managing your room allocations
-            </p>
+        <div className="w-full max-w-md space-y-6 animate-scale-in">
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold">Welcome Back</h1>
+            <p className="text-muted-foreground">Sign in to access your account</p>
           </div>
-          
-          <form onSubmit={handleLogin} className="space-y-6">
-            {error && (
-              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
-                {error}
-              </div>
-            )}
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email address</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="Enter your email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium">
+                Email
+              </label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium">
+                Password
+              </label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Button 
-                    variant="link" 
-                    size="sm" 
-                    className="px-0 h-auto"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toast.info('Please contact your administrator to reset your password');
-                    }}
-                  >
-                    Forgot password?
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Input 
-                    id="password" 
-                    type={showPassword ? "text" : "password"} 
-                    placeholder="Enter your password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="flex items-center space-x-2 mt-2">
-                  <Checkbox 
-                    id="showPassword" 
-                    checked={showPassword} 
-                    onCheckedChange={(checked) => setShowPassword(!!checked)} 
-                  />
-                  <label
-                    htmlFor="showPassword"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Show password
-                  </label>
-                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
               </div>
             </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full" 
+
+            <Button
+              type="submit"
+              className="w-full py-6"
               size="lg"
-              disabled={loading}
+              disabled={isLoading}
             >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Logging in...
-                </>
+              {isLoading ? (
+                <span className="flex items-center justify-center">
+                  <span className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full"></span>
+                  Signing in...
+                </span>
               ) : (
-                'Log in'
+                <span className="flex items-center justify-center">
+                  <LogIn className="mr-2 h-5 w-5" /> Sign In
+                </span>
               )}
             </Button>
-            
-            <div className="text-center mt-4">
-              <p className="text-sm text-muted-foreground">
-                Don't have an account?{' '}
-                <Link to="/register" className="text-primary hover:underline">
-                  Create account
-                </Link>
-              </p>
-            </div>
           </form>
+
+          <div className="text-center space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Don't have an account?{' '}
+              <Link to="/register" className="text-primary hover:underline">
+                Create account
+              </Link>
+            </p>
+            <Button
+              variant="link"
+              onClick={() => navigate('/')}
+            >
+              Continue as Guest
+            </Button>
+          </div>
         </div>
       </main>
-      
-      <footer className="p-6 text-center text-sm text-muted-foreground">
-        <p>RoomAlloc — Optimized for Zimbabwean industries</p>
-      </footer>
     </div>
   );
 };

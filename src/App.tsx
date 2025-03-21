@@ -16,21 +16,14 @@ import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Reservations from "./pages/Reservations";
-import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
 const App = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   useEffect(() => {
-    // Check if user has completed onboarding
-    const onboardingCompleted = localStorage.getItem('onboardingCompleted');
-    setHasCompletedOnboarding(onboardingCompleted === 'true');
-
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
@@ -46,12 +39,6 @@ const App = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
-
-  // Clear onboarding status for testing - remove in production
-  useEffect(() => {
-    // Remove this in production - this is just to ensure onboarding always shows for testing
-    localStorage.removeItem('onboardingCompleted');
   }, []);
 
   if (loading) {
@@ -73,20 +60,12 @@ const App = () => {
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/reservations" element={<Reservations />} />
 
             {/* App routes - can be accessed without auth for now */}
-            <Route path="/app" element={<Index />} />
+            <Route path="/" element={<Index />} />
             <Route path="/rooms" element={<Rooms />} />
             <Route path="/people" element={<People />} />
             <Route path="/allocations" element={<Allocations />} />
-            <Route path="/profile" element={<Profile />} />
-            
-            {/* For testing purposes, always redirect to onboarding */}
-            <Route 
-              path="/" 
-              element={<Navigate to="/onboarding" replace />}
-            />
             
             {/* Fallback route */}
             <Route path="*" element={<NotFound />} />
