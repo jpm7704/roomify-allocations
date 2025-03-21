@@ -7,17 +7,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     
     if (!email || !password) {
+      setError('Please enter both email and password');
       toast.error('Please enter both email and password');
       return;
     }
@@ -25,17 +30,29 @@ const Login = () => {
     setLoading(true);
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please check your credentials and try again.');
+          toast.error('Invalid email or password');
+        } else {
+          setError(error.message);
+          toast.error(error.message || 'Failed to log in');
+        }
+        console.error('Login error:', error);
+        return;
+      }
       
       toast.success('Login successful!');
       navigate('/app');
     } catch (error: any) {
+      setError(error.message || 'An unexpected error occurred');
       toast.error(error.message || 'Failed to log in');
+      console.error('Login catch error:', error);
     } finally {
       setLoading(false);
     }
@@ -70,6 +87,12 @@ const Login = () => {
           </div>
           
           <form onSubmit={handleLogin} className="space-y-6">
+            {error && (
+              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
+                {error}
+              </div>
+            )}
+            
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email address</Label>
@@ -86,18 +109,41 @@ const Login = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <Button variant="link" size="sm" className="px-0 h-auto">
+                  <Button 
+                    variant="link" 
+                    size="sm" 
+                    className="px-0 h-auto"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toast.info('Please contact your administrator to reset your password');
+                    }}
+                  >
                     Forgot password?
                   </Button>
                 </div>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  placeholder="Enter your password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <Input 
+                    id="password" 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="Enter your password" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="flex items-center space-x-2 mt-2">
+                  <Checkbox 
+                    id="showPassword" 
+                    checked={showPassword} 
+                    onCheckedChange={(checked) => setShowPassword(!!checked)} 
+                  />
+                  <label
+                    htmlFor="showPassword"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Show password
+                  </label>
+                </div>
               </div>
             </div>
             
