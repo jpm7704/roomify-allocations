@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -10,8 +11,6 @@ import { useState } from 'react';
 interface RoomFormValues {
   name: string;
   capacity: string;
-  building: string;
-  floor: string;
   description: string;
   type: string;
 }
@@ -35,8 +34,6 @@ const RoomFormDialog = ({
     defaultValues: {
       name: '',
       capacity: '2',
-      building: 'Main Building',
-      floor: '1',
       description: '',
       type: 'Chalet',
     },
@@ -145,60 +142,6 @@ const RoomFormDialog = ({
                 </FormItem>
               )}
             />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={roomForm.control}
-                name="building"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Building</FormLabel>
-                    <FormControl>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select building" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Main Building">Main Building</SelectItem>
-                          <SelectItem value="East Wing">East Wing</SelectItem>
-                          <SelectItem value="West Wing">West Wing</SelectItem>
-                          <SelectItem value="South Block">South Block</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={roomForm.control}
-                name="floor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Floor</FormLabel>
-                    <FormControl>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select floor" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="G">Ground</SelectItem>
-                          <SelectItem value="1">First</SelectItem>
-                          <SelectItem value="2">Second</SelectItem>
-                          <SelectItem value="3">Third</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
 
             <FormField
               control={roomForm.control}
