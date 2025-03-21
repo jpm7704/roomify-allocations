@@ -22,9 +22,16 @@ interface RoomCardProps {
   onEdit?: (room: Room) => void;
   onDelete?: (roomId: string) => void;
   onClick?: (room: Room) => void;
+  onAssign?: (room: Room) => void;
 }
 
-const RoomCard = ({ room, onEdit, onDelete, onClick }: RoomCardProps) => {
+const RoomCard = ({ 
+  room, 
+  onEdit, 
+  onDelete, 
+  onClick, 
+  onAssign 
+}: RoomCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   
   const occupancyPercentage = Math.round((room.occupied / room.capacity) * 100);
@@ -127,7 +134,14 @@ const RoomCard = ({ room, onEdit, onDelete, onClick }: RoomCardProps) => {
           variant={isAvailable ? "default" : "outline"}
           className="transition-all duration-300 rounded-md"
           disabled={!isAvailable}
-          onClick={(e) => { e.stopPropagation(); onClick?.(room); }}
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            if (onAssign) {
+              onAssign(room);
+            } else {
+              onClick?.(room);
+            }
+          }}
         >
           {isAvailable ? 'Assign' : 'Full'}
         </Button>

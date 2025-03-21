@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Building, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,15 +8,16 @@ import RoomCard, { Room } from '@/components/RoomCard';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import RoomFormDialog from '@/components/RoomFormDialog';
+import { useNavigate } from 'react-router-dom';
 
 const Rooms = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   
-  // Fetch rooms from Supabase
   useEffect(() => {
     const fetchRooms = async () => {
       setLoading(true);
@@ -50,7 +50,6 @@ const Rooms = () => {
     fetchRooms();
   }, []);
   
-  // Filter rooms based on search query and active tab
   const filteredRooms = rooms.filter(room => {
     const matchesSearch = 
       room.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -125,7 +124,6 @@ const Rooms = () => {
   
   const handleDeleteRoom = async (roomId: string) => {
     try {
-      // Check if room is being used in allocations
       const { data: allocations, error: checkError } = await supabase
         .from('room_allocations')
         .select('id')
@@ -138,7 +136,6 @@ const Rooms = () => {
         return;
       }
       
-      // If room is not being used, delete it
       const { error } = await supabase
         .from('accommodation_rooms')
         .delete()
@@ -146,7 +143,6 @@ const Rooms = () => {
         
       if (error) throw error;
       
-      // Update local state
       setRooms(rooms.filter(room => room.id !== roomId));
       toast.success("Room deleted successfully");
     } catch (error) {
@@ -158,6 +154,15 @@ const Rooms = () => {
   const handleRoomClick = (room: Room) => {
     toast.info(`Viewing room: ${room.name}`);
     // Implement view room details functionality
+  };
+  
+  const handleAssignRoom = (room: Room) => {
+    if (room.occupied >= room.capacity) {
+      toast.error("This room is already at full capacity");
+      return;
+    }
+    
+    navigate(`/allocations?roomId=${room.id}`);
   };
   
   const renderRoomList = () => {
@@ -196,6 +201,7 @@ const Rooms = () => {
             onEdit={handleEditRoom}
             onDelete={handleDeleteRoom}
             onClick={handleRoomClick}
+            onAssign={handleAssignRoom}
           />
         ))}
       </div>
@@ -257,7 +263,6 @@ const Rooms = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Room Creation Dialog */}
         <RoomFormDialog
           isOpen={isRoomDialogOpen}
           onOpenChange={setIsRoomDialogOpen}

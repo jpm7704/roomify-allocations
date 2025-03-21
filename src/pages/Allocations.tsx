@@ -12,8 +12,13 @@ import AllocationsList from '@/components/AllocationsList';
 import AllocationFormDialog from '@/components/AllocationFormDialog';
 import RoomFormDialog from '@/components/RoomFormDialog';
 import { useForm } from 'react-hook-form';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 const Allocations = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const roomIdFromUrl = searchParams.get('roomId');
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
@@ -117,6 +122,20 @@ const Allocations = () => {
         setRooms(formattedRooms);
         setPeople(formattedPeople);
         setAllocations(formattedAllocations);
+
+        // Handle preselection of room from URL parameter
+        if (roomIdFromUrl && formattedRooms.length > 0) {
+          const roomToSelect = formattedRooms.find(room => room.id === roomIdFromUrl);
+          if (roomToSelect) {
+            setSelectedRoom(roomToSelect);
+            // If room has multiple beds, enable multi-select mode
+            if (roomToSelect.capacity > 1 && roomToSelect.capacity - roomToSelect.occupied > 1) {
+              setMultiSelectMode(true);
+            }
+            // Open the allocation dialog
+            setIsDialogOpen(true);
+          }
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
         toast.error("Failed to load data");
@@ -126,7 +145,7 @@ const Allocations = () => {
     };
 
     fetchData();
-  }, []);
+  }, [roomIdFromUrl]);
 
   const filteredAllocations = allocations.filter(allocation => {
     const matchesSearch = 
@@ -506,6 +525,10 @@ const Allocations = () => {
   const handleCancelAllocationDialog = () => {
     setIsDialogOpen(false);
     setSelectedPeople([]);
+    
+    if (roomIdFromUrl) {
+      navigate('/allocations');
+    }
   };
 
   const handleClearSearch = () => {
