@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Plus, Search, Users, Loader2 } from 'lucide-react';
+import { Plus, Search, Users, Loader2, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Layout from '@/components/Layout';
@@ -9,10 +9,11 @@ import { Person } from '@/components/PersonCard';
 import { Room } from '@/components/RoomCard';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const Allocations = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,10 +24,21 @@ const Allocations = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
 
   const form = useForm({
     defaultValues: {
       notes: '',
+    },
+  });
+
+  const roomForm = useForm({
+    defaultValues: {
+      name: '',
+      capacity: '2',
+      building: 'Main Building',
+      floor: '1',
+      description: '',
     },
   });
 
@@ -62,10 +74,11 @@ const Allocations = () => {
             accommodation_rooms!inner(id, name, capacity, occupied, floor, building)
           `);
 
-        if (allocationsError) throw allocationsError;
+        // It's okay if we don't have allocations yet
+        if (allocationsError && allocationsError.code !== 'PGRST116') throw allocationsError;
 
         // Transform data to match component props
-        const formattedRooms: Room[] = roomsData.map(room => ({
+        const formattedRooms: Room[] = roomsData?.map(room => ({
           id: room.id,
           name: room.name,
           capacity: room.capacity,
@@ -73,11 +86,11 @@ const Allocations = () => {
           floor: room.floor,
           building: room.building,
           description: room.description
-        }));
+        })) || [];
 
-        const formattedPeople: Person[] = peopleData.map(person => {
+        const formattedPeople: Person[] = peopleData?.map(person => {
           // Find allocation for this person
-          const allocation = allocationsData.find(a => a.person_id === person.id);
+          const allocation = allocationsData?.find(a => a.person_id === person.id);
           return {
             id: person.id,
             name: person.name,
@@ -86,9 +99,9 @@ const Allocations = () => {
             roomId: allocation ? allocation.room_id : undefined,
             roomName: allocation ? allocation.accommodation_rooms.name : undefined
           };
-        });
+        }) || [];
 
-        const formattedAllocations: Allocation[] = allocationsData.map(allocation => {
+        const formattedAllocations: Allocation[] = allocationsData?.map(allocation => {
           const person: Person = {
             id: allocation.person_id,
             name: allocation.women_attendees.name,
@@ -116,7 +129,7 @@ const Allocations = () => {
             dateAssigned: allocation.date_assigned,
             notes: allocation.notes
           };
-        });
+        }) || [];
 
         setRooms(formattedRooms);
         setPeople(formattedPeople);
@@ -210,6 +223,61 @@ const Allocations = () => {
 
   const handleRoomSelect = (room: Room) => {
     setSelectedRoom(room);
+  };
+
+  const handleCreateRoom = () => {
+    setIsRoomDialogOpen(true);
+    roomForm.reset({
+      name: '',
+      capacity: '2',
+      building: 'Main Building',
+      floor: '1',
+      description: '',
+    });
+  };
+
+  const handleSaveRoom = async () => {
+    try {
+      const values = roomForm.getValues();
+      
+      if (!values.name || !values.capacity) {
+        toast.error("Room name and capacity are required");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('accommodation_rooms')
+        .insert({
+          name: values.name,
+          capacity: parseInt(values.capacity),
+          building: values.building || 'Main Building',
+          floor: values.floor || '1',
+          description: values.description,
+          occupied: 0
+        })
+        .select();
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const newRoom: Room = {
+          id: data[0].id,
+          name: data[0].name,
+          capacity: data[0].capacity,
+          occupied: 0,
+          floor: data[0].floor || '1',
+          building: data[0].building || 'Main Building',
+          description: data[0].description
+        };
+
+        setRooms([...rooms, newRoom]);
+        toast.success(`Room "${values.name}" created successfully`);
+        setIsRoomDialogOpen(false);
+      }
+    } catch (error) {
+      console.error("Error creating room:", error);
+      toast.error("Failed to create room");
+    }
   };
 
   const handleSaveAllocation = async () => {
@@ -363,10 +431,16 @@ const Allocations = () => {
             </p>
           </div>
           
-          <Button className="rounded-md" onClick={handleCreateAllocation}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Allocation
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" className="rounded-md" onClick={handleCreateRoom}>
+              <Building className="mr-2 h-4 w-4" />
+              Add Room
+            </Button>
+            <Button className="rounded-md" onClick={handleCreateAllocation}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Allocation
+            </Button>
+          </div>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -395,9 +469,19 @@ const Allocations = () => {
                 {searchQuery ? 'Try adjusting your search query' : 'There are no room allocations yet'}
               </p>
               
-              <Button className="mt-6" onClick={() => searchQuery ? setSearchQuery('') : handleCreateAllocation()}>
-                {searchQuery ? 'Clear Search' : 'Create Allocation'}
-              </Button>
+              <div className="flex gap-3 mt-6">
+                {rooms.length === 0 && (
+                  <Button onClick={handleCreateRoom}>
+                    Create a Room First
+                  </Button>
+                )}
+                <Button 
+                  onClick={() => searchQuery ? setSearchQuery('') : handleCreateAllocation()}
+                  disabled={rooms.length === 0}
+                >
+                  {searchQuery ? 'Clear Search' : 'Create Allocation'}
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -413,10 +497,14 @@ const Allocations = () => {
           )}
         </div>
 
+        {/* Allocation Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-[550px]">
             <DialogHeader>
               <DialogTitle>Create Room Allocation</DialogTitle>
+              <DialogDescription>
+                Assign an attendee to a room. Each room has a limited capacity.
+              </DialogDescription>
             </DialogHeader>
             
             <Form {...form}>
@@ -453,6 +541,19 @@ const Allocations = () => {
                       <Alert>
                         <AlertDescription>
                           No rooms found. Please add rooms first.
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mt-2 w-full"
+                            onClick={() => {
+                              setIsDialogOpen(false);
+                              setTimeout(() => {
+                                handleCreateRoom();
+                              }, 100);
+                            }}
+                          >
+                            Add Room
+                          </Button>
                         </AlertDescription>
                       </Alert>
                     ) : (
@@ -505,6 +606,128 @@ const Allocations = () => {
               >
                 Save Allocation
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Room Creation Dialog */}
+        <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add New Room</DialogTitle>
+              <DialogDescription>
+                Create a new accommodation room for attendees.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Form {...roomForm}>
+              <div className="grid gap-4 py-4">
+                <FormField
+                  control={roomForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Room Name*</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Room 101" required {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={roomForm.control}
+                  name="capacity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Capacity*</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="1" 
+                          required
+                          placeholder="Number of beds" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={roomForm.control}
+                    name="building"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Building</FormLabel>
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select building" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Main Building">Main Building</SelectItem>
+                              <SelectItem value="East Wing">East Wing</SelectItem>
+                              <SelectItem value="West Wing">West Wing</SelectItem>
+                              <SelectItem value="South Block">South Block</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={roomForm.control}
+                    name="floor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Floor</FormLabel>
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select floor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="G">Ground</SelectItem>
+                              <SelectItem value="1">First</SelectItem>
+                              <SelectItem value="2">Second</SelectItem>
+                              <SelectItem value="3">Third</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={roomForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Any additional details about the room" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </Form>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsRoomDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleSaveRoom}>Save Room</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
