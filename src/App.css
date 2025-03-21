@@ -17,10 +17,10 @@
   transition: filter 300ms;
 }
 .logo:hover {
-  filter: drop-shadow(0 0 2em rgba(100, 108, 255, 0.6));
+  filter: drop-shadow(0 0 2em rgba(100, 108, 255, 0.8)); /* Brighter glow effect */
 }
 .logo.react:hover {
-  filter: drop-shadow(0 0 2em rgba(97, 218, 251, 0.6));
+  filter: drop-shadow(0 0 2em rgba(97, 218, 251, 0.8)); /* Brighter glow effect */
 }
 
 @keyframes logo-spin {
@@ -43,5 +43,5 @@
 }
 
 .read-the-docs {
-  color: #888;
+  color: #fff; /* Brighter text color (was #888) */
 }
