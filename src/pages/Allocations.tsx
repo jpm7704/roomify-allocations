@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Building } from 'lucide-react';
+import { Plus, Search, Building, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Layout from '@/components/Layout';
@@ -14,6 +14,16 @@ import RoomFormDialog from '@/components/RoomFormDialog';
 import AllocationDetailsDialog from '@/components/AllocationDetailsDialog';
 import { useForm } from 'react-hook-form';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Allocations = () => {
   const [searchParams] = useSearchParams();
@@ -33,6 +43,7 @@ const Allocations = () => {
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [viewedAllocation, setViewedAllocation] = useState<Allocation | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -544,7 +555,66 @@ const Allocations = () => {
   const handleClearSearch = () => {
     setSearchQuery('');
   };
+
+  const handleClearAllData = async () => {
+    try {
+      setLoading(true);
+      
+      const { data: allAllocations, error: fetchError } = await supabase
+        .from('room_allocations')
+        .select('*');
+        
+      if (fetchError) throw fetchError;
+      
+      const { error: deleteError } = await supabase
+        .from('room_allocations')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+        
+      if (deleteError) throw deleteError;
+      
+      const roomUpdates = rooms.map(room => ({
+        id: room.id,
+        occupied: 0
+      }));
+      
+      for (const roomUpdate of roomUpdates) {
+        const { error: roomError } = await supabase
+          .from('accommodation_rooms')
+          .update({ occupied: 0 })
+          .eq('id', roomUpdate.id);
+          
+        if (roomError) throw roomError;
+      }
+      
+      setAllocations([]);
+      const updatedRooms = rooms.map(room => ({
+        ...room,
+        occupied: 0
+      }));
+      setRooms(updatedRooms);
+      
+      const updatedPeople = people.map(person => ({
+        ...person,
+        roomId: undefined,
+        roomName: undefined
+      }));
+      setPeople(updatedPeople);
+      
+      toast.success('All allocation data has been cleared');
+      setIsAlertDialogOpen(false);
+    } catch (error) {
+      console.error("Error clearing data:", error);
+      toast.error("Failed to clear allocation data");
+    } finally {
+      setLoading(false);
+    }
+  };
   
+  const confirmClearAll = () => {
+    setIsAlertDialogOpen(true);
+  };
+
   return (
     <Layout>
       <div className="page-container">
@@ -589,6 +659,7 @@ const Allocations = () => {
             onClick={handleAllocationClick}
             onCreateRoom={handleCreateRoom}
             onCreateAllocation={searchQuery ? handleClearSearch : handleCreateAllocation}
+            onClearAll={confirmClearAll}
             hasRooms={rooms.length > 0}
           />
         </div>
@@ -628,10 +699,27 @@ const Allocations = () => {
           onDelete={handleRemoveAllocation}
           onEdit={handleEditAllocation}
         />
+        
+        <AlertDialog open={isAlertDialogOpen} onOpenChange={setIsAlertDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action will remove all room allocations and reset room occupancy counts to zero. 
+                This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleClearAllData} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Clear All Data
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );
 };
 
 export default Allocations;
-

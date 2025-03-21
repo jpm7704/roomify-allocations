@@ -11,6 +11,7 @@ interface AllocationsListProps {
   onClick: (allocation: Allocation) => void;
   onCreateRoom: () => void;
   onCreateAllocation: () => void;
+  onClearAll: () => void;
   hasRooms: boolean;
 }
 
@@ -22,6 +23,7 @@ const AllocationsList = ({
   onClick,
   onCreateRoom,
   onCreateAllocation,
+  onClearAll,
   hasRooms
 }: AllocationsListProps) => {
   if (loading) {
@@ -60,15 +62,26 @@ const AllocationsList = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {allocations.map((allocation) => (
-        <AllocationCard
-          key={allocation.id}
-          allocation={allocation}
-          onRemove={onRemove}
-          onClick={onClick}
-        />
-      ))}
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button 
+          variant="destructive" 
+          onClick={onClearAll}
+          className="rounded-md"
+        >
+          Clear All Data
+        </Button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {allocations.map((allocation) => (
+          <AllocationCard
+            key={allocation.id}
+            allocation={allocation}
+            onRemove={onRemove}
+            onClick={onClick}
+          />
+        ))}
+      </div>
     </div>
   );
 };
