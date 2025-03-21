@@ -45,7 +45,7 @@ const AllocationCard = ({ allocation, onRemove, onClick }: AllocationCardProps) 
   return (
     <Card 
       className={cn(
-        "overflow-hidden transition-all duration-300 item-transition",
+        "overflow-hidden transition-all duration-500 ease-in-out item-transition",
         "bg-card/60 backdrop-blur-md border-border/30 shadow-sm",
         "hover:shadow-md hover:border-primary/20 group",
         isHovered && "ring-1 ring-primary/20"
@@ -64,7 +64,7 @@ const AllocationCard = ({ allocation, onRemove, onClick }: AllocationCardProps) 
       <CardContent className="p-6 pt-0">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <Avatar className="h-10 w-10 border transition-all group-hover:border-primary">
+            <Avatar className="h-10 w-10 border transition-all duration-500 ease-in-out group-hover:border-primary">
               <AvatarImage src={allocation.person.avatar} />
               <AvatarFallback className="bg-primary/10 text-primary">
                 {getInitials(allocation.person.name)}
@@ -77,11 +77,11 @@ const AllocationCard = ({ allocation, onRemove, onClick }: AllocationCardProps) 
           </div>
           
           <div className="w-8 h-8 flex items-center justify-center">
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform duration-500 ease-in-out group-hover:translate-x-1" />
           </div>
           
           <div className="flex items-center space-x-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 border transition-all group-hover:border-primary">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 border transition-all duration-500 ease-in-out group-hover:border-primary">
               <Building className="h-5 w-5 text-primary" />
             </div>
             <div>
@@ -111,7 +111,7 @@ const AllocationCard = ({ allocation, onRemove, onClick }: AllocationCardProps) 
           <Button
             size="sm"
             variant="ghost"
-            className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full transition-all duration-500 ease-in-out"
             onClick={(e) => { e.stopPropagation(); onRemove?.(allocation.id); }}
           >
             <Trash2 className="h-4 w-4 mr-2" />

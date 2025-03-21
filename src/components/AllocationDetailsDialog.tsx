@@ -56,7 +56,7 @@ const AllocationDetailsDialog = ({
   
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl animate-scale-in">
         <DialogHeader>
           <DialogTitle className="text-xl">Allocation Details</DialogTitle>
           <DialogDescription>
@@ -70,7 +70,7 @@ const AllocationDetailsDialog = ({
             <TabsTrigger value="notes">Notes</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="details" className="mt-4 space-y-6">
+          <TabsContent value="details" className="mt-4 space-y-6 transition-all duration-500 ease-in-out">
             {/* Date information */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
               <Calendar className="h-4 w-4" />
@@ -79,14 +79,14 @@ const AllocationDetailsDialog = ({
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Person information */}
-              <div className="space-y-4">
+              <div className="space-y-4 transition-all duration-500 ease-in-out">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <UserRound className="h-5 w-5 text-primary" />
                   Person Information
                 </h3>
                 
-                <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-                  <Avatar className="h-16 w-16 border-2 border-primary/20">
+                <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg transition-all duration-500 ease-in-out hover:bg-muted/70">
+                  <Avatar className="h-16 w-16 border-2 border-primary/20 transition-all duration-500 ease-in-out">
                     <AvatarImage src={allocation.person.avatar} />
                     <AvatarFallback className="bg-primary/10 text-primary text-xl">
                       {getInitials(allocation.person.name)}
@@ -112,14 +112,14 @@ const AllocationDetailsDialog = ({
               </div>
               
               {/* Room information */}
-              <div className="space-y-4">
+              <div className="space-y-4 transition-all duration-500 ease-in-out">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Building className="h-5 w-5 text-primary" />
                   Room Information
                 </h3>
                 
-                <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 border-2 border-primary/20">
+                <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg transition-all duration-500 ease-in-out hover:bg-muted/70">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 border-2 border-primary/20 transition-all duration-500 ease-in-out">
                     <Building className="h-8 w-8 text-primary" />
                   </div>
                   
@@ -153,8 +153,8 @@ const AllocationDetailsDialog = ({
             </div>
           </TabsContent>
           
-          <TabsContent value="notes" className="mt-4">
-            <div className="border rounded-lg p-4 min-h-[200px]">
+          <TabsContent value="notes" className="mt-4 transition-all duration-500 ease-in-out">
+            <div className="border rounded-lg p-4 min-h-[200px] transition-all duration-500 ease-in-out hover:border-primary/20">
               {allocation.notes ? (
                 <div className="flex items-start gap-3">
                   <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
@@ -171,10 +171,18 @@ const AllocationDetailsDialog = ({
         </Tabs>
         
         <DialogFooter className="gap-2 sm:gap-0 mt-6">
-          <Button variant="secondary" onClick={handleEdit}>
+          <Button 
+            variant="secondary" 
+            onClick={handleEdit}
+            className="transition-all duration-500 ease-in-out hover:bg-secondary/80"
+          >
             Edit Allocation
           </Button>
-          <Button variant="destructive" onClick={handleDelete}>
+          <Button 
+            variant="destructive" 
+            onClick={handleDelete}
+            className="transition-all duration-500 ease-in-out hover:bg-destructive/90"
+          >
             <Trash2 className="h-4 w-4 mr-2" />
             Delete Allocation
           </Button>

@@ -40,7 +40,7 @@ const RoomCard = ({
   return (
     <Card 
       className={cn(
-        "overflow-hidden transition-all duration-300 item-transition",
+        "overflow-hidden transition-all duration-500 ease-in-out item-transition",
         "bg-card/60 backdrop-blur-md border-border/30 shadow-sm",
         "hover:shadow-md hover:border-primary/20 group",
         isHovered && "ring-1 ring-primary/20"
@@ -51,7 +51,7 @@ const RoomCard = ({
     >
       <CardHeader className="p-6 pb-0 flex flex-row items-start justify-between space-y-0">
         <div>
-          <CardTitle className="text-xl font-semibold transition-colors group-hover:text-primary">
+          <CardTitle className="text-xl font-semibold transition-colors duration-500 ease-in-out group-hover:text-primary">
             {room.name}
           </CardTitle>
           {(room.floor || room.building) && (
@@ -112,7 +112,7 @@ const RoomCard = ({
           <div className="w-full bg-muted/50 rounded-full h-2 overflow-hidden backdrop-blur-sm">
             <div 
               className={cn(
-                "h-full rounded-full transition-all duration-500",
+                "h-full rounded-full transition-all duration-750 ease-in-out",
                 occupancyPercentage === 100 
                   ? "bg-destructive/90" 
                   : occupancyPercentage > 75 
@@ -133,7 +133,7 @@ const RoomCard = ({
         <Button 
           size="sm" 
           variant={isAvailable ? "default" : "outline"}
-          className="transition-all duration-300 rounded-full ios-button"
+          className="transition-all duration-500 ease-in-out rounded-full ios-button"
           disabled={!isAvailable}
           onClick={(e) => { 
             e.stopPropagation(); 

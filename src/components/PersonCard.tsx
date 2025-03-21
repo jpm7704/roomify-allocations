@@ -43,7 +43,7 @@ const PersonCard = ({ person, onEdit, onDelete, onAssign, onClick }: PersonCardP
   return (
     <Card 
       className={cn(
-        "overflow-hidden transition-all duration-300 item-transition",
+        "overflow-hidden transition-all duration-500 ease-in-out item-transition",
         "bg-card/60 backdrop-blur-md border-border/30 shadow-sm",
         "hover:shadow-md hover:border-primary/20 group",
         isHovered && "ring-1 ring-primary/20"
@@ -54,13 +54,13 @@ const PersonCard = ({ person, onEdit, onDelete, onAssign, onClick }: PersonCardP
     >
       <CardHeader className="p-6 flex flex-row items-center justify-between space-y-0">
         <div className="flex items-center space-x-4">
-          <Avatar className="h-12 w-12 border transition-all group-hover:border-primary">
+          <Avatar className="h-12 w-12 border transition-all duration-500 ease-in-out group-hover:border-primary">
             <AvatarImage src={person.avatar} />
             <AvatarFallback className="bg-primary/10 text-primary">{getInitials(person.name)}</AvatarFallback>
           </Avatar>
           
           <div>
-            <h3 className="font-medium text-base transition-colors group-hover:text-primary">{person.name}</h3>
+            <h3 className="font-medium text-base transition-colors duration-500 ease-in-out group-hover:text-primary">{person.name}</h3>
             <p className="text-sm text-muted-foreground">{person.email}</p>
           </div>
         </div>
@@ -108,7 +108,7 @@ const PersonCard = ({ person, onEdit, onDelete, onAssign, onClick }: PersonCardP
         <Button 
           size="sm" 
           variant={!isAssigned ? "default" : "outline"}
-          className="transition-all duration-300 rounded-full ios-button"
+          className="transition-all duration-500 ease-in-out rounded-full ios-button"
           onClick={(e) => { e.stopPropagation(); onAssign?.(person); }}
         >
           {!isAssigned ? 'Assign Room' : 'Reassign'}

@@ -59,7 +59,7 @@ const Layout = ({ children }: LayoutProps) => {
       {/* Mobile overlay */}
       {navOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-10 sm:hidden" 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-10 sm:hidden transition-opacity duration-500 ease-in-out" 
           onClick={() => setNavOpen(false)}
         />
       )}
@@ -73,7 +73,7 @@ const Layout = ({ children }: LayoutProps) => {
       
       {/* Main content */}
       <main className={cn(
-        "flex-1 transition-all duration-300 relative z-10",
+        "flex-1 transition-all duration-500 ease-in-out relative z-10",
         navOpen ? "sm:ml-64" : "sm:ml-16",
         "pt-16 sm:pt-0"
       )}>

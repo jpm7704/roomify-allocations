@@ -98,6 +98,7 @@
     height: 100%;
     width: 100%;
     overflow-x: hidden;
+    scroll-behavior: smooth;
   }
 
   body {
@@ -142,7 +143,7 @@
   }
   
   .glass-hover {
-    @apply hover:bg-background/80 transition-colors;
+    @apply hover:bg-background/80 transition-colors duration-500 ease-in-out;
   }
   
   .title-text {
@@ -166,7 +167,7 @@
   }
   
   .icon-button {
-    @apply h-10 w-10 rounded-full flex items-center justify-center transition-all duration-200;
+    @apply h-10 w-10 rounded-full flex items-center justify-center transition-all duration-500 ease-in-out;
   }
   
   .page-transition {
@@ -194,6 +195,6 @@
   }
   
   .ios-tab {
-    @apply rounded-full transition-all duration-200;
+    @apply rounded-full transition-all duration-500 ease-in-out;
   }
 }
