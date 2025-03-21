@@ -1,20 +1,26 @@
 
 import { useState } from 'react';
-import { Bed, User, MoreVertical, Pencil, Trash2, Hotel, Home, Tent } from 'lucide-react';
+import { Building, Bed, Users, DotsHorizontal, Edit, Trash2, PlusCircle, MapPin, Hotel, Home, Tent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export interface Room {
   id: string;
   name: string;
   capacity: number;
   occupied: number;
-  description?: string;
   floor?: string;
   building?: string;
+  description?: string;
   type?: string;
 }
 
@@ -26,147 +32,164 @@ interface RoomCardProps {
   onAssign?: (room: Room) => void;
 }
 
-const RoomCard = ({ 
-  room, 
-  onEdit, 
-  onDelete, 
-  onClick, 
-  onAssign 
-}: RoomCardProps) => {
-  const [isHovered, setIsHovered] = useState(false);
+const RoomCard = ({ room, onEdit, onDelete, onClick, onAssign }: RoomCardProps) => {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   
   const occupancyPercentage = Math.round((room.occupied / room.capacity) * 100);
   const isAvailable = room.occupied < room.capacity;
   
-  const getRoomTypeIcon = (type?: string) => {
-    switch (type?.toLowerCase()) {
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (confirmingDelete) {
+      onDelete?.(room.id);
+      setConfirmingDelete(false);
+    } else {
+      setConfirmingDelete(true);
+    }
+  };
+  
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit?.(room);
+  };
+  
+  const handleAssignClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isAvailable) {
+      onAssign?.(room);
+    }
+  };
+  
+  const handleCardClick = () => {
+    onClick?.(room);
+  };
+
+  const getRoomTypeIcon = () => {
+    switch (room.type?.toLowerCase()) {
       case 'hotel':
-        return <Hotel className="h-4 w-4 text-muted-foreground" />;
+        return <Hotel className="h-4 w-4" />;
       case 'chalet':
-        return <Home className="h-4 w-4 text-muted-foreground" />;
+        return <Home className="h-4 w-4" />;
       case 'personal tent':
-        return <Tent className="h-4 w-4 text-muted-foreground" />;
+        return <Tent className="h-4 w-4" />;
       default:
-        return <Bed className="h-4 w-4 text-muted-foreground" />;
+        return <Bed className="h-4 w-4" />;
     }
   };
   
   return (
     <Card 
-      className={cn(
-        "overflow-hidden transition-all duration-500 ease-in-out item-transition",
-        "bg-card/60 backdrop-blur-md border-border/30 shadow-sm",
-        "hover:shadow-md hover:border-primary/20 group",
-        isHovered && "ring-1 ring-primary/20"
-      )}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={() => onClick?.(room)}
+      className="relative border-muted transition-all hover:border-muted-foreground/30 hover:shadow cursor-pointer overflow-hidden"
+      onClick={handleCardClick}
     >
-      <CardHeader className="p-6 pb-0 flex flex-row items-start justify-between space-y-0">
+      <div 
+        className={`absolute top-0 left-0 h-1 w-full ${
+          occupancyPercentage === 100 
+            ? "bg-destructive/90" 
+            : occupancyPercentage > 75 
+              ? "bg-amber-500/90"
+              : "bg-primary/90"
+        }`}
+      />
+      
+      <CardHeader className="flex-row items-start justify-between pb-2">
         <div>
-          <CardTitle className="text-xl font-semibold transition-colors duration-500 ease-in-out group-hover:text-primary">
-            {room.name}
-          </CardTitle>
-          {(room.floor || room.building) && (
-            <p className="text-sm text-muted-foreground mt-1">
-              {[room.floor && `Floor ${room.floor}`, room.building].filter(Boolean).join(', ')}
-            </p>
+          <CardTitle className="text-xl">{room.name}</CardTitle>
+          <CardDescription className="mt-1">
+            {room.building && room.floor 
+              ? `${room.building}, Floor ${room.floor}` 
+              : room.building || 'No location specified'}
+          </CardDescription>
+          
+          {room.type && (
+            <Badge variant="outline" className="mt-2">
+              {getRoomTypeIcon()}
+              <span className="ml-1">{room.type}</span>
+            </Badge>
           )}
         </div>
         
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={(e) => e.stopPropagation()}>
-              <MoreVertical className="h-4 w-4" />
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+            <Button variant="ghost" size="icon">
+              <DotsHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="ios-card">
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit?.(room); }}>
-              <Pencil className="mr-2 h-4 w-4" />
-              <span>Edit</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              className="text-destructive focus:text-destructive"
-              onClick={(e) => { e.stopPropagation(); onDelete?.(room.id); }}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              <span>Delete</span>
-            </DropdownMenuItem>
+          
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Options</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            
+            {onEdit && (
+              <DropdownMenuItem onClick={handleEditClick}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit Room
+              </DropdownMenuItem>
+            )}
+            
+            {onAssign && (
+              <DropdownMenuItem 
+                onClick={handleAssignClick}
+                disabled={!isAvailable}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Assign Attendee
+              </DropdownMenuItem>
+            )}
+            
+            {onDelete && (
+              <DropdownMenuItem 
+                onClick={handleDeleteClick}
+                className={confirmingDelete ? 'text-destructive' : ''}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {confirmingDelete ? 'Confirm Delete' : 'Delete Room'}
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </CardHeader>
       
-      <CardContent className="p-6">
-        {room.type && (
-          <Badge variant="outline" className="mb-4">
-            {getRoomTypeIcon(room.type)}
-            <span className="ml-1">{room.type}</span>
-          </Badge>
-        )}
-        
-        {room.description && (
-          <p className="text-sm text-muted-foreground mb-4">{room.description}</p>
-        )}
-        
-        <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center">
-            <Bed className="h-5 w-5 mr-2 text-muted-foreground" />
-            <span className="text-sm font-medium">
-              {room.capacity} {room.capacity === 1 ? 'Bed' : 'Beds'}
-            </span>
+      <CardContent className="pb-3">
+        <div className="flex flex-col space-y-3">
+          <div className="flex justify-between">
+            <div className="flex items-center gap-2 text-sm">
+              <Bed className="h-4 w-4 text-muted-foreground" />
+              <span>{room.capacity} {room.capacity === 1 ? 'Bed' : 'Beds'}</span>
+            </div>
+            
+            <div className="flex items-center gap-2 text-sm">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span>{room.occupied} Occupied</span>
+            </div>
           </div>
           
-          <div className="flex items-center">
-            <User className="h-5 w-5 mr-2 text-muted-foreground" />
-            <span className="text-sm font-medium">
-              {room.occupied} Occupied
-            </span>
-          </div>
-        </div>
-        
-        <div className="mt-4">
-          <div className="flex justify-between text-xs mb-1">
-            <span>Occupancy</span>
-            <span>{occupancyPercentage}%</span>
-          </div>
-          <div className="w-full bg-muted/50 rounded-full h-2 overflow-hidden backdrop-blur-sm">
-            <div 
-              className={cn(
-                "h-full rounded-full transition-all duration-750 ease-in-out",
-                occupancyPercentage === 100 
-                  ? "bg-destructive/90" 
-                  : occupancyPercentage > 75 
-                    ? "bg-amber-500/90"
-                    : "bg-primary/90"
-              )}
-              style={{ width: `${occupancyPercentage}%` }}
-            />
+          <div>
+            <div className="flex justify-between text-xs mb-1">
+              <span>Occupancy</span>
+              <span>{occupancyPercentage}%</span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2">
+              <div 
+                className={`h-full rounded-full transition-all duration-500 ${
+                  occupancyPercentage === 100 
+                    ? "bg-destructive/90" 
+                    : occupancyPercentage > 75 
+                      ? "bg-amber-500/90"
+                      : "bg-primary/90"
+                }`}
+                style={{ width: `${occupancyPercentage}%` }}
+              />
+            </div>
           </div>
         </div>
       </CardContent>
       
-      <CardFooter className="p-6 pt-0 flex items-center justify-between">
-        <Badge variant={isAvailable ? "outline" : "secondary"} className="ios-badge">
+      <CardFooter className="pt-0">
+        <Badge variant={isAvailable ? "outline" : "secondary"}>
           {isAvailable ? 'Available' : 'Full'}
         </Badge>
-        
-        <Button 
-          size="sm" 
-          variant={isAvailable ? "default" : "outline"}
-          className="transition-all duration-500 ease-in-out rounded-full ios-button"
-          disabled={!isAvailable}
-          onClick={(e) => { 
-            e.stopPropagation(); 
-            if (onAssign) {
-              onAssign(room);
-            } else {
-              onClick?.(room);
-            }
-          }}
-        >
-          {isAvailable ? 'Assign' : 'Full'}
-        </Button>
       </CardFooter>
     </Card>
   );

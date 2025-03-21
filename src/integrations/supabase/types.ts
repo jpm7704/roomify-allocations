@@ -19,6 +19,7 @@ export type Database = {
           id: string
           name: string
           occupied: number | null
+          type: string | null
         }
         Insert: {
           building?: string | null
@@ -29,6 +30,7 @@ export type Database = {
           id?: string
           name: string
           occupied?: number | null
+          type?: string | null
         }
         Update: {
           building?: string | null
@@ -39,6 +41,7 @@ export type Database = {
           id?: string
           name?: string
           occupied?: number | null
+          type?: string | null
         }
         Relationships: []
       }

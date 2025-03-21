@@ -65,6 +65,9 @@ const App = () => {
             <Route path="/people" element={<People />} />
             <Route path="/allocations" element={<Allocations />} />
             
+            {/* Redirect any /rooms requests to allocations */}
+            <Route path="/rooms" element={<Navigate to="/allocations" replace />} />
+            
             {/* Fallback route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
