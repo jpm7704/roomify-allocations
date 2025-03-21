@@ -13,24 +13,19 @@ const Layout = ({ children }: LayoutProps) => {
   const [navOpen, setNavOpen] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   
-  // Load theme preference from localStorage on initial load
+  // Load theme preference from localStorage on initial load and force dark mode
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
-    } else {
-      // Default to dark theme to match jellyfish background
-      setTheme('dark');
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    }
+    // Always set to dark theme to match jellyfish background
+    setTheme('dark');
+    document.documentElement.classList.add('dark');
+    localStorage.setItem('theme', 'dark');
   }, []);
   
+  // This function is kept but essentially does nothing since we're forcing dark mode
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
+    const newTheme = 'dark'; // Always stays dark
     setTheme(newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    document.documentElement.classList.add('dark');
     localStorage.setItem('theme', newTheme);
   };
   
@@ -46,7 +41,7 @@ const Layout = ({ children }: LayoutProps) => {
   ];
 
   return (
-    <div className="min-h-screen flex w-full">
+    <div className="min-h-screen flex w-full relative z-10">
       {/* Sidebar */}
       <Sidebar 
         navOpen={navOpen} 
@@ -73,7 +68,7 @@ const Layout = ({ children }: LayoutProps) => {
       
       {/* Main content */}
       <main className={cn(
-        "flex-1 transition-all duration-300",
+        "flex-1 transition-all duration-300 relative z-10",
         navOpen ? "sm:ml-64" : "sm:ml-16",
         "pt-16 sm:pt-0"
       )}>
