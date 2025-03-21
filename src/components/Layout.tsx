@@ -11,10 +11,11 @@ interface NavItemProps {
   icon: React.ReactNode;
   label: string;
   active: boolean;
+  collapsed: boolean;
   onClick?: () => void;
 }
 
-const NavItem = ({ to, icon, label, active, onClick }: NavItemProps) => {
+const NavItem = ({ to, icon, label, active, collapsed, onClick }: NavItemProps) => {
   return (
     <TooltipProvider delayDuration={300}>
       <Tooltip>
@@ -22,7 +23,7 @@ const NavItem = ({ to, icon, label, active, onClick }: NavItemProps) => {
           <Link 
             to={to} 
             className={cn(
-              "relative flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 group",
+              "relative flex items-center justify-center sm:justify-start gap-3 px-3 py-3 rounded-lg transition-all duration-300 group w-full",
               active 
                 ? "text-primary font-medium bg-primary/10" 
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -30,7 +31,9 @@ const NavItem = ({ to, icon, label, active, onClick }: NavItemProps) => {
             onClick={onClick}
           >
             <div className="flex-shrink-0 w-5 h-5">{icon}</div>
-            <span className="transition-all duration-300 font-medium">{label}</span>
+            {!collapsed && (
+              <span className="transition-all duration-300 font-medium whitespace-nowrap overflow-hidden">{label}</span>
+            )}
             {active && (
               <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-full" />
             )}
@@ -88,33 +91,45 @@ const Layout = ({ children }: LayoutProps) => {
       {/* Sidebar/Navigation */}
       <div className={cn(
         "fixed inset-y-0 left-0 z-20 bg-card border-r border-border transition-all duration-300 transform",
-        navOpen ? "w-64" : "w-20",
+        navOpen ? "w-64" : "w-16",
         "sm:translate-x-0"
       )}>
         <div className="h-full flex flex-col">
-          <div className="p-5 flex items-center justify-between border-b border-border">
-            <div className={cn(
-              "font-bold text-xl transition-opacity duration-300 flex items-center gap-3",
-              navOpen ? "opacity-100" : "opacity-0 sm:hidden"
-            )}>
-              <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
+          <div className="p-4 flex items-center justify-between border-b border-border">
+            {navOpen ? (
+              <div className="font-bold text-xl flex items-center gap-3">
+                <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
+                  <Building className="w-5 h-5 text-primary" />
+                </div>
+                <span className="text-foreground">Roomify</span>
+              </div>
+            ) : (
+              <div className="w-8 h-8 mx-auto rounded-md bg-primary/10 flex items-center justify-center">
                 <Building className="w-5 h-5 text-primary" />
               </div>
-              <span className="text-foreground">Roomify</span>
-            </div>
+            )}
+            {navOpen && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full hover:bg-primary/10" 
+                onClick={toggleNav}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
+          
+          {!navOpen && (
             <Button 
               variant="ghost" 
               size="icon" 
-              className="rounded-full hover:bg-primary/10" 
+              className="rounded-full mx-auto mt-2 hover:bg-primary/10" 
               onClick={toggleNav}
             >
-              {navOpen ? (
-                <ChevronLeft className="h-5 w-5" />
-              ) : (
-                <ChevronRight className="h-5 w-5" />
-              )}
+              <ChevronRight className="h-5 w-5" />
             </Button>
-          </div>
+          )}
           
           <nav className="flex-1 py-6 px-3 space-y-2 overflow-y-auto">
             {navItems.map((item) => (
@@ -124,6 +139,7 @@ const Layout = ({ children }: LayoutProps) => {
                 icon={item.icon}
                 label={item.label}
                 active={location.pathname === item.to}
+                collapsed={!navOpen}
                 onClick={() => {
                   // Close sidebar on mobile when navigating
                   if (window.innerWidth < 640) {
@@ -134,7 +150,10 @@ const Layout = ({ children }: LayoutProps) => {
             ))}
           </nav>
           
-          <div className="p-5 border-t border-border flex justify-between items-center">
+          <div className={cn(
+            "p-4 border-t border-border",
+            navOpen ? "flex justify-between items-center" : "flex flex-col items-center gap-4"
+          )}>
             <Button 
               variant="outline" 
               size="icon" 
@@ -148,12 +167,11 @@ const Layout = ({ children }: LayoutProps) => {
               )}
             </Button>
             
-            <div className={cn(
-              "text-sm text-muted-foreground transition-opacity duration-300",
-              navOpen ? "opacity-100" : "opacity-0 hidden"
-            )}>
-              v1.0.0
-            </div>
+            {navOpen && (
+              <div className="text-sm text-muted-foreground">
+                v1.0.0
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -196,7 +214,7 @@ const Layout = ({ children }: LayoutProps) => {
       {/* Main content */}
       <main className={cn(
         "flex-1 transition-all duration-300",
-        navOpen ? "sm:ml-64" : "sm:ml-20",
+        navOpen ? "sm:ml-64" : "sm:ml-16",
         "pt-16 sm:pt-0"
       )}>
         <div className="min-h-screen pt-6 pb-12 px-4 sm:px-6 page-transition">
