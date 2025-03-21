@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building, ChevronRight, UserCircle, Lock, Calendar } from 'lucide-react';
@@ -14,6 +15,14 @@ const Onboarding = () => {
 
   const handleIndustrySelect = (industry: Industry) => {
     setSelectedIndustry(industry);
+    
+    // If reservation is selected, navigate directly to reservations
+    if (industry === 'reservation') {
+      localStorage.setItem('onboardingCompleted', 'true');
+      navigate('/reservations');
+      return;
+    }
+    
     // Store the selected industry in localStorage
     localStorage.setItem('selectedIndustry', industry);
     setCurrentStep('final');
@@ -31,11 +40,6 @@ const Onboarding = () => {
   const handleLogin = () => {
     localStorage.setItem('onboardingCompleted', 'true');
     navigate('/login');
-  };
-  
-  const handleReservation = () => {
-    localStorage.setItem('onboardingCompleted', 'true');
-    navigate('/reservations');
   };
 
   const renderWelcomeStep = () => (
@@ -84,7 +88,7 @@ const Onboarding = () => {
         {selectedIndustry === 'general' && 'Your workspace is set up and ready for room allocation management.'}
       </p>
       
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Button 
           variant="outline" 
           size="lg" 
@@ -102,16 +106,6 @@ const Onboarding = () => {
         >
           <UserCircle className="h-4 w-4" />
           Create Account
-        </Button>
-        
-        <Button 
-          variant="secondary"
-          size="lg" 
-          onClick={handleReservation}
-          className="gap-2"
-        >
-          <Calendar className="h-4 w-4" />
-          Make Reservation
         </Button>
       </div>
     </div>

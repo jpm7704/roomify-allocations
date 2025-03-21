@@ -1,11 +1,11 @@
 
 import { useState } from 'react';
-import { Building, Hotel, Tractor, GraduationCap, Stethoscope } from 'lucide-react';
+import { Building, Hotel, Tractor, GraduationCap, Stethoscope, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-export type Industry = 'hotel' | 'farming' | 'education' | 'healthcare' | 'general';
+export type Industry = 'hotel' | 'farming' | 'education' | 'healthcare' | 'general' | 'reservation';
 
 interface IndustrySelectorProps {
   onSelectIndustry: (industry: Industry) => void;
@@ -49,6 +49,13 @@ const IndustrySelector = ({ onSelectIndustry }: IndustrySelectorProps) => {
       description: 'Standard room allocation for any organization',
       icon: <Building className="h-8 w-8" />,
       features: ['Basic Room Management', 'People Management', 'Room Allocation']
+    },
+    {
+      id: 'reservation',
+      title: 'Make Reservation',
+      description: 'Reserve for an event without creating an account',
+      icon: <Calendar className="h-8 w-8" />,
+      features: ['SDA Women\'s Ministry Camp Meeting', 'Harare City Centre Church', 'August 5-7, 2023']
     }
   ];
 
