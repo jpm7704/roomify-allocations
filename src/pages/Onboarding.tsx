@@ -1,9 +1,8 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building, ChevronRight, UserCircle, Lock, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
 import IndustrySelector, { Industry } from '@/components/IndustrySelector';
 
 // Step type
@@ -13,6 +12,14 @@ const Onboarding = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
   const [selectedIndustry, setSelectedIndustry] = useState<Industry | null>(null);
+
+  // Check if onboarding has been completed before
+  useEffect(() => {
+    const onboardingCompleted = localStorage.getItem('onboardingCompleted');
+    if (onboardingCompleted === 'true') {
+      navigate('/app');
+    }
+  }, [navigate]);
 
   const handleIndustrySelect = (industry: Industry) => {
     setSelectedIndustry(industry);
@@ -26,14 +33,17 @@ const Onboarding = () => {
   };
 
   const handleCreateAccount = () => {
+    localStorage.setItem('onboardingCompleted', 'true');
     navigate('/register');
   };
 
   const handleLogin = () => {
+    localStorage.setItem('onboardingCompleted', 'true');
     navigate('/login');
   };
   
   const handleReservation = () => {
+    localStorage.setItem('onboardingCompleted', 'true');
     navigate('/reservations');
   };
 

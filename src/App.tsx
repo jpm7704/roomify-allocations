@@ -23,8 +23,13 @@ const queryClient = new QueryClient();
 const App = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   useEffect(() => {
+    // Check if user has completed onboarding
+    const onboardingCompleted = localStorage.getItem('onboardingCompleted');
+    setHasCompletedOnboarding(onboardingCompleted === 'true');
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
@@ -69,8 +74,15 @@ const App = () => {
             <Route path="/people" element={<People />} />
             <Route path="/allocations" element={<Allocations />} />
             
-            {/* Redirect root to onboarding */}
-            <Route path="/" element={<Navigate to="/onboarding" replace />} />
+            {/* Redirect root to onboarding if not completed, otherwise to app */}
+            <Route 
+              path="/" 
+              element={
+                hasCompletedOnboarding ? 
+                <Navigate to="/app" replace /> : 
+                <Navigate to="/onboarding" replace />
+              } 
+            />
             
             {/* Fallback route */}
             <Route path="*" element={<NotFound />} />
