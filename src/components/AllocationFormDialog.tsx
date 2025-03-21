@@ -52,6 +52,11 @@ const AllocationFormDialog = ({
   const remainingCapacity = selectedRoom ? selectedRoom.capacity - selectedRoom.occupied : 0;
   const canAddMore = selectedPeople.length < remainingCapacity;
 
+  // Helper to get accommodation type display name
+  const getAccommodationTypeName = (room: Room) => {
+    return room.type === 'Personal tent' ? 'tent' : 'room';
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[550px]">
@@ -59,8 +64,8 @@ const AllocationFormDialog = ({
           <DialogTitle>Create Room Allocation</DialogTitle>
           <DialogDescription>
             {multiSelectMode 
-              ? `Assign multiple attendees to room. This room can accommodate ${remainingCapacity} more people.`
-              : 'Assign an attendee to a room. Each room has a limited capacity.'}
+              ? `Assign multiple attendees to accommodation. This ${selectedRoom ? getAccommodationTypeName(selectedRoom) : 'accommodation'} can accommodate ${remainingCapacity} more people.`
+              : 'Assign an attendee to accommodation. Each accommodation has a limited capacity.'}
           </DialogDescription>
         </DialogHeader>
         
@@ -135,12 +140,12 @@ const AllocationFormDialog = ({
             </FormItem>
 
             <FormItem>
-              <FormLabel>Select Room</FormLabel>
+              <FormLabel>Select Accommodation</FormLabel>
               <div className="max-h-[200px] overflow-y-auto border rounded-md p-2">
                 {rooms.length === 0 ? (
                   <Alert>
                     <AlertDescription>
-                      No rooms found. Please add rooms first.
+                      No accommodations found. Please add accommodations first.
                       <Button 
                         variant="outline" 
                         size="sm" 
@@ -152,7 +157,7 @@ const AllocationFormDialog = ({
                           }, 100);
                         }}
                       >
-                        Add Room
+                        Add Accommodation
                       </Button>
                     </AlertDescription>
                   </Alert>
@@ -175,13 +180,13 @@ const AllocationFormDialog = ({
                     >
                       <div className="font-medium">{room.name}</div>
                       <div className="text-sm">
-                        {room.building} {room.floor && `- Floor ${room.floor}`}
+                        {room.type === 'Personal tent' ? 'Tent' : 'Chalet'}
                       </div>
                       <div className="text-xs mt-1">
                         Occupancy: {room.occupied}/{room.capacity}
                         {room.capacity > 1 && (
                           <span className="ml-2">
-                            {room.capacity > 1 ? `(${room.capacity - room.occupied} beds available)` : ''}
+                            {room.capacity > 1 ? `(${room.capacity - room.occupied} ${room.capacity - room.occupied === 1 ? 'space' : 'spaces'} available)` : ''}
                           </span>
                         )}
                         {room.occupied >= room.capacity && ' (Full)'}

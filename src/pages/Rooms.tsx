@@ -33,9 +33,8 @@ const Rooms = () => {
           name: room.name,
           capacity: room.capacity,
           occupied: room.occupied || 0,
-          floor: room.floor,
-          building: room.building,
-          description: room.description
+          description: room.description,
+          type: room.type || 'Chalet'
         })) || [];
 
         setRooms(formattedRooms);
@@ -54,7 +53,7 @@ const Rooms = () => {
     const matchesSearch = 
       room.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       room.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      room.building?.toLowerCase().includes(searchQuery.toLowerCase());
+      room.type?.toLowerCase().includes(searchQuery.toLowerCase());
       
     if (activeTab === 'all') return matchesSearch;
     if (activeTab === 'available') return matchesSearch && room.occupied < room.capacity;
@@ -83,10 +82,8 @@ const Rooms = () => {
         .insert({
           name: values.name,
           capacity: parseInt(values.capacity),
-          building: values.building || 'Main Building',
-          floor: values.floor || '1',
           description: values.description,
-          type: values.type || 'Hotel',
+          type: values.type || 'Chalet',
           occupied: 0
         })
         .select();
@@ -99,14 +96,12 @@ const Rooms = () => {
           name: data[0].name,
           capacity: data[0].capacity,
           occupied: 0,
-          floor: data[0].floor || '1',
-          building: data[0].building || 'Main Building',
           description: data[0].description,
-          type: data[0].type || 'Hotel'
+          type: data[0].type || 'Chalet'
         };
 
         setRooms([...rooms, newRoom]);
-        toast.success(`Room "${values.name}" created successfully`);
+        toast.success(`${values.type === 'Personal tent' ? 'Tent' : 'Room'} "${values.name}" created successfully`);
         setIsRoomDialogOpen(false);
       }
     } catch (error) {
@@ -120,7 +115,7 @@ const Rooms = () => {
   };
   
   const handleEditRoom = async (room: Room) => {
-    toast.info(`Edit room: ${room.name}`);
+    toast.info(`Edit ${room.type === 'Personal tent' ? 'tent' : 'room'}: ${room.name}`);
     // Implement edit functionality
   };
   
@@ -134,7 +129,7 @@ const Rooms = () => {
       if (checkError) throw checkError;
       
       if (allocations && allocations.length > 0) {
-        toast.error("Cannot delete room with active allocations");
+        toast.error("Cannot delete accommodation with active allocations");
         return;
       }
       
@@ -146,21 +141,21 @@ const Rooms = () => {
       if (error) throw error;
       
       setRooms(rooms.filter(room => room.id !== roomId));
-      toast.success("Room deleted successfully");
+      toast.success("Accommodation deleted successfully");
     } catch (error) {
       console.error("Error deleting room:", error);
-      toast.error("Failed to delete room");
+      toast.error("Failed to delete accommodation");
     }
   };
   
   const handleRoomClick = (room: Room) => {
-    toast.info(`Viewing room: ${room.name}`);
+    toast.info(`Viewing ${room.type === 'Personal tent' ? 'tent' : 'room'}: ${room.name}`);
     // Implement view room details functionality
   };
   
   const handleAssignRoom = (room: Room) => {
     if (room.occupied >= room.capacity) {
-      toast.error("This room is already at full capacity");
+      toast.error(`This ${room.type === 'Personal tent' ? 'tent' : 'room'} is already at full capacity`);
       return;
     }
     
@@ -187,7 +182,7 @@ const Rooms = () => {
           </p>
           {!searchQuery && (
             <Button className="mt-4" onClick={handleOpenRoomDialog}>
-              Add Room
+              Add Accommodation
             </Button>
           )}
         </div>
@@ -215,15 +210,15 @@ const Rooms = () => {
       <div className="page-container">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Rooms</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Accommodations</h1>
             <p className="text-muted-foreground mt-1">
-              Manage and view all rooms and their current occupancy
+              Manage and view all rooms and tents and their current occupancy
             </p>
           </div>
           
           <Button className="rounded-md" onClick={handleOpenRoomDialog}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Room
+            Add Accommodation
           </Button>
         </div>
         
@@ -231,7 +226,7 @@ const Rooms = () => {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search rooms..."
+              placeholder="Search accommodations..."
               className="pl-9 rounded-md"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

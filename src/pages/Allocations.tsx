@@ -65,7 +65,7 @@ const Allocations = () => {
             person_id,
             room_id,
             women_attendees!inner(id, name, email, phone, department, home_church),
-            accommodation_rooms!inner(id, name, capacity, occupied, floor, building)
+            accommodation_rooms!inner(id, name, capacity, occupied, type)
           `);
 
         if (allocationsError && allocationsError.code !== 'PGRST116') throw allocationsError;
@@ -75,9 +75,8 @@ const Allocations = () => {
           name: room.name,
           capacity: room.capacity,
           occupied: room.occupied || 0,
-          floor: room.floor,
-          building: room.building,
-          description: room.description
+          description: room.description,
+          type: room.type || 'Chalet'
         })) || [];
 
         const formattedPeople: Person[] = peopleData?.map(person => {
@@ -107,8 +106,7 @@ const Allocations = () => {
             name: allocation.accommodation_rooms.name,
             capacity: allocation.accommodation_rooms.capacity,
             occupied: allocation.accommodation_rooms.occupied || 0,
-            floor: allocation.accommodation_rooms.floor,
-            building: allocation.accommodation_rooms.building
+            type: allocation.accommodation_rooms.type || 'Chalet'
           };
 
           return {
@@ -272,9 +270,8 @@ const Allocations = () => {
         .insert({
           name: values.name,
           capacity: parseInt(values.capacity),
-          building: values.building || 'Main Building',
-          floor: values.floor || '1',
           description: values.description,
+          type: values.type || 'Chalet',
           occupied: 0
         })
         .select();
@@ -287,18 +284,17 @@ const Allocations = () => {
           name: data[0].name,
           capacity: data[0].capacity,
           occupied: 0,
-          floor: data[0].floor || '1',
-          building: data[0].building || 'Main Building',
-          description: data[0].description
+          description: data[0].description,
+          type: data[0].type || 'Chalet'
         };
 
         setRooms([...rooms, newRoom]);
-        toast.success(`Room "${values.name}" created successfully`);
+        toast.success(`${values.type === 'Personal tent' ? 'Tent' : 'Room'} "${values.name}" created successfully`);
         setIsRoomDialogOpen(false);
       }
     } catch (error) {
       console.error("Error creating room:", error);
-      toast.error("Failed to create room");
+      toast.error("Failed to create accommodation");
     }
   };
 
@@ -367,7 +363,7 @@ const Allocations = () => {
             person_id,
             room_id,
             women_attendees!inner(id, name, email, phone, department, home_church),
-            accommodation_rooms!inner(id, name, capacity, occupied, floor, building)
+            accommodation_rooms!inner(id, name, capacity, occupied, type)
           `);
 
         if (refreshError) throw refreshError;
@@ -382,9 +378,8 @@ const Allocations = () => {
             name: room.name,
             capacity: room.capacity,
             occupied: room.occupied || 0,
-            floor: room.floor,
-            building: room.building,
-            description: room.description
+            description: room.description,
+            type: room.type || 'Chalet'
           })) || [];
 
           const updatedFormattedAllocations: Allocation[] = freshData.map((allocation: any) => {
@@ -402,8 +397,7 @@ const Allocations = () => {
               name: allocation.accommodation_rooms.name,
               capacity: allocation.accommodation_rooms.capacity,
               occupied: allocation.accommodation_rooms.occupied || 0,
-              floor: allocation.accommodation_rooms.floor,
-              building: allocation.accommodation_rooms.building
+              type: allocation.accommodation_rooms.type || 'Chalet'
             };
 
             return {
@@ -515,8 +509,7 @@ const Allocations = () => {
           name: selectedRoom.name,
           capacity: selectedRoom.capacity,
           occupied: selectedRoom.occupied + 1,
-          floor: selectedRoom.floor,
-          building: selectedRoom.building
+          type: selectedRoom.type || 'Chalet'
         }
       };
 
@@ -634,4 +627,3 @@ const Allocations = () => {
 };
 
 export default Allocations;
-
