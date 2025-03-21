@@ -55,7 +55,7 @@ const IndustrySelector = ({ onSelectIndustry }: IndustrySelectorProps) => {
       title: 'Reservations',
       description: 'Register for upcoming events and activities',
       icon: <Calendar className="h-8 w-8" />,
-      features: ['SDA Women\'s Ministry Camp Meeting', 'August 5-7, 2023', 'Harare City Centre Church']
+      features: ['View Available Events', 'Quick Registration', 'No Account Required']
     }
   ];
 
