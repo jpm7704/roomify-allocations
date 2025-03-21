@@ -1,21 +1,20 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building, Home, UserRound, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Sidebar from './layout/Sidebar';
 import MobileHeader from './layout/MobileHeader';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const [navOpen, setNavOpen] = React.useState(true);
-  const [theme, setTheme] = React.useState<'light' | 'dark'>('light');
+const Layout = ({ children }: LayoutProps) => {
+  const [navOpen, setNavOpen] = useState(true);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   
   // Load theme preference from localStorage on initial load
-  React.useEffect(() => {
+  useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
     if (savedTheme) {
       setTheme(savedTheme);

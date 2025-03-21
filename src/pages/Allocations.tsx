@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Building, Trash2 } from 'lucide-react';
+import { Plus, Search, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Layout from '@/components/Layout';
@@ -14,16 +14,6 @@ import RoomFormDialog from '@/components/RoomFormDialog';
 import AllocationDetailsDialog from '@/components/AllocationDetailsDialog';
 import { useForm } from 'react-hook-form';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 const Allocations = () => {
   const [searchParams] = useSearchParams();
@@ -43,7 +33,6 @@ const Allocations = () => {
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [viewedAllocation, setViewedAllocation] = useState<Allocation | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -76,7 +65,7 @@ const Allocations = () => {
             person_id,
             room_id,
             women_attendees!inner(id, name, email, phone, department, home_church),
-            accommodation_rooms!inner(id, name, capacity, occupied, floor, building, type)
+            accommodation_rooms!inner(id, name, capacity, occupied, floor, building)
           `);
 
         if (allocationsError && allocationsError.code !== 'PGRST116') throw allocationsError;
@@ -88,8 +77,7 @@ const Allocations = () => {
           occupied: room.occupied || 0,
           floor: room.floor,
           building: room.building,
-          description: room.description,
-          type: room.type || 'Hotel'
+          description: room.description
         })) || [];
 
         const formattedPeople: Person[] = peopleData?.map(person => {
@@ -120,8 +108,7 @@ const Allocations = () => {
             capacity: allocation.accommodation_rooms.capacity,
             occupied: allocation.accommodation_rooms.occupied || 0,
             floor: allocation.accommodation_rooms.floor,
-            building: allocation.accommodation_rooms.building,
-            type: allocation.accommodation_rooms.type || 'Hotel'
+            building: allocation.accommodation_rooms.building
           };
 
           return {
@@ -288,7 +275,6 @@ const Allocations = () => {
           building: values.building || 'Main Building',
           floor: values.floor || '1',
           description: values.description,
-          type: values.type || 'Hotel',
           occupied: 0
         })
         .select();
@@ -303,8 +289,7 @@ const Allocations = () => {
           occupied: 0,
           floor: data[0].floor || '1',
           building: data[0].building || 'Main Building',
-          description: data[0].description,
-          type: data[0].type || 'Hotel'
+          description: data[0].description
         };
 
         setRooms([...rooms, newRoom]);
@@ -382,7 +367,7 @@ const Allocations = () => {
             person_id,
             room_id,
             women_attendees!inner(id, name, email, phone, department, home_church),
-            accommodation_rooms!inner(id, name, capacity, occupied, floor, building, type)
+            accommodation_rooms!inner(id, name, capacity, occupied, floor, building)
           `);
 
         if (refreshError) throw refreshError;
@@ -399,8 +384,7 @@ const Allocations = () => {
             occupied: room.occupied || 0,
             floor: room.floor,
             building: room.building,
-            description: room.description,
-            type: room.type || 'Hotel'
+            description: room.description
           })) || [];
 
           const updatedFormattedAllocations: Allocation[] = freshData.map((allocation: any) => {
@@ -419,8 +403,7 @@ const Allocations = () => {
               capacity: allocation.accommodation_rooms.capacity,
               occupied: allocation.accommodation_rooms.occupied || 0,
               floor: allocation.accommodation_rooms.floor,
-              building: allocation.accommodation_rooms.building,
-              type: allocation.accommodation_rooms.type || 'Hotel'
+              building: allocation.accommodation_rooms.building
             };
 
             return {
@@ -533,8 +516,7 @@ const Allocations = () => {
           capacity: selectedRoom.capacity,
           occupied: selectedRoom.occupied + 1,
           floor: selectedRoom.floor,
-          building: selectedRoom.building,
-          type: selectedRoom.type || 'Hotel'
+          building: selectedRoom.building
         }
       };
 
@@ -562,66 +544,7 @@ const Allocations = () => {
   const handleClearSearch = () => {
     setSearchQuery('');
   };
-
-  const handleClearAllData = async () => {
-    try {
-      setLoading(true);
-      
-      const { data: allAllocations, error: fetchError } = await supabase
-        .from('room_allocations')
-        .select('*');
-        
-      if (fetchError) throw fetchError;
-      
-      const { error: deleteError } = await supabase
-        .from('room_allocations')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-        
-      if (deleteError) throw deleteError;
-      
-      const roomUpdates = rooms.map(room => ({
-        id: room.id,
-        occupied: 0
-      }));
-      
-      for (const roomUpdate of roomUpdates) {
-        const { error: roomError } = await supabase
-          .from('accommodation_rooms')
-          .update({ occupied: 0 })
-          .eq('id', roomUpdate.id);
-          
-        if (roomError) throw roomError;
-      }
-      
-      setAllocations([]);
-      const updatedRooms = rooms.map(room => ({
-        ...room,
-        occupied: 0
-      }));
-      setRooms(updatedRooms);
-      
-      const updatedPeople = people.map(person => ({
-        ...person,
-        roomId: undefined,
-        roomName: undefined
-      }));
-      setPeople(updatedPeople);
-      
-      toast.success('All allocation data has been cleared');
-      setIsAlertDialogOpen(false);
-    } catch (error) {
-      console.error("Error clearing data:", error);
-      toast.error("Failed to clear allocation data");
-    } finally {
-      setLoading(false);
-    }
-  };
   
-  const confirmClearAll = () => {
-    setIsAlertDialogOpen(true);
-  };
-
   return (
     <Layout>
       <div className="page-container">
@@ -666,7 +589,6 @@ const Allocations = () => {
             onClick={handleAllocationClick}
             onCreateRoom={handleCreateRoom}
             onCreateAllocation={searchQuery ? handleClearSearch : handleCreateAllocation}
-            onClearAll={confirmClearAll}
             hasRooms={rooms.length > 0}
           />
         </div>
@@ -706,27 +628,10 @@ const Allocations = () => {
           onDelete={handleRemoveAllocation}
           onEdit={handleEditAllocation}
         />
-        
-        <AlertDialog open={isAlertDialogOpen} onOpenChange={setIsAlertDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action will remove all room allocations and reset room occupancy counts to zero. 
-                This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleClearAllData} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                Clear All Data
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
     </Layout>
   );
 };
 
 export default Allocations;
+

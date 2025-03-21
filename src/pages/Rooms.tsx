@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Building, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,6 @@ import RoomCard, { Room } from '@/components/RoomCard';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import RoomFormDialog from '@/components/RoomFormDialog';
-import RoomDetailsDialog from '@/components/RoomDetailsDialog';
 import { useNavigate } from 'react-router-dom';
 
 const Rooms = () => {
@@ -19,8 +17,6 @@ const Rooms = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   
   useEffect(() => {
     const fetchRooms = async () => {
@@ -156,8 +152,8 @@ const Rooms = () => {
   };
   
   const handleRoomClick = (room: Room) => {
-    setSelectedRoom(room);
-    setIsDetailsDialogOpen(true);
+    toast.info(`Viewing room: ${room.name}`);
+    // Implement view room details functionality
   };
   
   const handleAssignRoom = (room: Room) => {
@@ -272,13 +268,6 @@ const Rooms = () => {
           onOpenChange={setIsRoomDialogOpen}
           onSave={handleSaveRoom}
           onCancel={handleCancelRoomDialog}
-        />
-
-        <RoomDetailsDialog 
-          room={selectedRoom}
-          isOpen={isDetailsDialogOpen}
-          onOpenChange={setIsDetailsDialogOpen}
-          onAssign={handleAssignRoom}
         />
       </div>
     </Layout>
