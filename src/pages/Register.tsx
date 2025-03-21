@@ -1,152 +1,155 @@
 
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, UserPlus, Eye, EyeOff } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Building, ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 const Register = () => {
   const navigate = useNavigate();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
+    if (!name || !email || !password) {
+      toast.error('Please fill in all fields');
       return;
     }
-
-    setIsLoading(true);
-
+    
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    
+    setLoading(true);
+    
     try {
       const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            name: name,
+          },
+        },
       });
-
+      
       if (error) throw error;
-
-      toast.success('Account created successfully! Check your email for verification.');
+      
+      toast.success('Registration successful! Please check your email to verify your account.');
       navigate('/login');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create account');
+      toast.error(error.message || 'Failed to register');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <header className="w-full py-4 px-6 flex items-center border-b">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/onboarding')} className="mr-4">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-2xl font-bold text-foreground">Create Account</h1>
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex flex-col">
+      <header className="p-6">
+        <div className="flex items-center gap-2">
+          <Building className="h-6 w-6 text-primary" />
+          <span className="font-bold text-xl">RoomAlloc</span>
+        </div>
       </header>
-
+      
       <main className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md space-y-6 animate-scale-in">
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold">Join Room Allocator</h1>
-            <p className="text-muted-foreground">Create your account to get started</p>
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate('/onboarding')}
+              className="mb-4"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+            
+            <h1 className="text-3xl font-bold mb-2">Create Account</h1>
+            <p className="text-muted-foreground mb-8">
+              Sign up to start managing your room allocations
+            </p>
           </div>
-
-          <form onSubmit={handleRegister} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
-                Password
-              </label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Create a password"
+          
+          <form onSubmit={handleRegister} className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input 
+                  id="name" 
+                  type="text" 
+                  placeholder="Enter your name" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+            
+              <div className="space-y-2">
+                <Label htmlFor="email">Email address</Label>
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="Enter your email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  placeholder="Create a password (min. 6 characters)" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <label htmlFor="confirmPassword" className="text-sm font-medium">
-                Confirm Password
-              </label>
-              <Input
-                id="confirmPassword"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Confirm your password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full py-6"
+            
+            <Button 
+              type="submit" 
+              className="w-full" 
               size="lg"
-              disabled={isLoading}
+              disabled={loading}
             >
-              {isLoading ? (
-                <span className="flex items-center justify-center">
-                  <span className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full"></span>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating account...
-                </span>
+                </>
               ) : (
-                <span className="flex items-center justify-center">
-                  <UserPlus className="mr-2 h-5 w-5" /> Create Account
-                </span>
+                'Create account'
               )}
             </Button>
+            
+            <div className="text-center mt-4">
+              <p className="text-sm text-muted-foreground">
+                Already have an account?{' '}
+                <Link to="/login" className="text-primary hover:underline">
+                  Log in
+                </Link>
+              </p>
+            </div>
           </form>
-
-          <div className="text-center space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Already have an account?{' '}
-              <Link to="/login" className="text-primary hover:underline">
-                Sign in
-              </Link>
-            </p>
-            <Button
-              variant="link"
-              onClick={() => navigate('/')}
-            >
-              Continue as Guest
-            </Button>
-          </div>
         </div>
       </main>
+      
+      <footer className="p-6 text-center text-sm text-muted-foreground">
+        <p>RoomAlloc — Optimized for Zimbabwean industries</p>
+      </footer>
     </div>
   );
 };
