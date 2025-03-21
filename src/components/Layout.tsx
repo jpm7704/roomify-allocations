@@ -11,21 +11,26 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const [navOpen, setNavOpen] = useState(true);
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   
-  // Load theme preference from localStorage on initial load and force dark mode
+  // Load theme preference from localStorage on initial load
   useEffect(() => {
-    // Always set to dark theme to match jellyfish background
-    setTheme('dark');
-    document.documentElement.classList.add('dark');
-    localStorage.setItem('theme', 'dark');
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    } else {
+      // Check system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setTheme(prefersDark ? 'dark' : 'light');
+      document.documentElement.classList.toggle('dark', prefersDark);
+    }
   }, []);
   
-  // This function is kept but essentially does nothing since we're forcing dark mode
   const toggleTheme = () => {
-    const newTheme = 'dark'; // Always stays dark
+    const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
-    document.documentElement.classList.add('dark');
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
     localStorage.setItem('theme', newTheme);
   };
   
