@@ -456,8 +456,19 @@ const Allocations = () => {
 
       if (roomError) throw roomError;
 
+      const idResponse = await supabase
+        .from('room_allocations')
+        .select('id')
+        .eq('person_id', selectedPerson.id)
+        .eq('room_id', selectedRoom.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      const newAllocationId = idResponse.data?.id;
+
       const newAllocation: Allocation = {
-        id: (await supabase.from('room_allocations').select('id').single()).id,
+        id: newAllocationId || crypto.randomUUID(),
         personId: selectedPerson.id,
         roomId: selectedRoom.id,
         dateAssigned: new Date().toISOString(),
@@ -466,7 +477,7 @@ const Allocations = () => {
           id: selectedPerson.id,
           name: selectedPerson.name,
           email: selectedPerson.email || '',
-          department: selectedPerson.department || selectedPerson.home_church || '',
+          department: selectedPerson.department || '',
           roomId: selectedRoom.id,
           roomName: selectedRoom.name
         },
