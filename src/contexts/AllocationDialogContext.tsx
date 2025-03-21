@@ -30,6 +30,7 @@ interface AllocationDialogContextType {
   setSelectedRoom: (room: Room | null) => void;
   setSelectedPeople: React.Dispatch<React.SetStateAction<Person[]>>;
   setMultiSelectMode: (enabled: boolean) => void;
+  setIsDetailsDialogOpen: (isOpen: boolean) => void;
 }
 
 const AllocationDialogContext = createContext<AllocationDialogContextType | undefined>(undefined);
@@ -102,7 +103,8 @@ export const AllocationDialogProvider: React.FC<{ children: React.ReactNode }> =
     setSelectedPerson,
     setSelectedRoom,
     setSelectedPeople,
-    setMultiSelectMode
+    setMultiSelectMode,
+    setIsDetailsDialogOpen
   };
   
   return (
