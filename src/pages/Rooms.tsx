@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Building, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,23 +7,51 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Layout from '@/components/Layout';
 import RoomCard, { Room } from '@/components/RoomCard';
 import { toast } from 'sonner';
-
-// Mock data
-const mockRooms: Room[] = [
-  { id: '1', name: 'Room 101', capacity: 2, occupied: 2, floor: '1', building: 'Main Building', description: 'Double room with mountain view' },
-  { id: '2', name: 'Room 102', capacity: 4, occupied: 3, floor: '1', building: 'Main Building', description: 'Quad room with city view' },
-  { id: '3', name: 'Room 201', capacity: 1, occupied: 0, floor: '2', building: 'Main Building', description: 'Single room with private bathroom' },
-  { id: '4', name: 'Room 202', capacity: 2, occupied: 1, floor: '2', building: 'Main Building', description: 'Double room with garden view' },
-  { id: '5', name: 'Room A1', capacity: 6, occupied: 5, floor: '1', building: 'Annex', description: 'Large room with shared facilities' },
-  { id: '6', name: 'Room A2', capacity: 4, occupied: 4, floor: '1', building: 'Annex', description: 'Quad room with shared bathroom' },
-];
+import { supabase } from '@/integrations/supabase/client';
+import RoomFormDialog from '@/components/RoomFormDialog';
 
 const Rooms = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
+  
+  // Fetch rooms from Supabase
+  useEffect(() => {
+    const fetchRooms = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('accommodation_rooms')
+          .select('*');
+        
+        if (error) throw error;
+
+        const formattedRooms: Room[] = data?.map(room => ({
+          id: room.id,
+          name: room.name,
+          capacity: room.capacity,
+          occupied: room.occupied || 0,
+          floor: room.floor,
+          building: room.building,
+          description: room.description
+        })) || [];
+
+        setRooms(formattedRooms);
+      } catch (error) {
+        console.error("Error fetching rooms:", error);
+        toast.error("Failed to load rooms");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRooms();
+  }, []);
   
   // Filter rooms based on search query and active tab
-  const filteredRooms = mockRooms.filter(room => {
+  const filteredRooms = rooms.filter(room => {
     const matchesSearch = 
       room.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       room.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -36,22 +64,144 @@ const Rooms = () => {
     return matchesSearch;
   });
   
-  const allRoomsCount = mockRooms.length;
-  const availableRoomsCount = mockRooms.filter(room => room.occupied < room.capacity).length;
-  const fullRoomsCount = mockRooms.filter(room => room.occupied === room.capacity).length;
+  const allRoomsCount = rooms.length;
+  const availableRoomsCount = rooms.filter(room => room.occupied < room.capacity).length;
+  const fullRoomsCount = rooms.filter(room => room.occupied === room.capacity).length;
   
-  const handleEditRoom = (room: Room) => {
-    toast.info(`Edit room: ${room.name}`);
+  const handleOpenRoomDialog = () => {
+    setIsRoomDialogOpen(true);
+  };
+
+  const handleSaveRoom = async (values: any) => {
+    try {
+      if (!values.name || !values.capacity) {
+        toast.error("Room name and capacity are required");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('accommodation_rooms')
+        .insert({
+          name: values.name,
+          capacity: parseInt(values.capacity),
+          building: values.building || 'Main Building',
+          floor: values.floor || '1',
+          description: values.description,
+          occupied: 0
+        })
+        .select();
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const newRoom: Room = {
+          id: data[0].id,
+          name: data[0].name,
+          capacity: data[0].capacity,
+          occupied: 0,
+          floor: data[0].floor || '1',
+          building: data[0].building || 'Main Building',
+          description: data[0].description
+        };
+
+        setRooms([...rooms, newRoom]);
+        toast.success(`Room "${values.name}" created successfully`);
+        setIsRoomDialogOpen(false);
+      }
+    } catch (error) {
+      console.error("Error creating room:", error);
+      toast.error("Failed to create room");
+    }
+  };
+
+  const handleCancelRoomDialog = () => {
+    setIsRoomDialogOpen(false);
   };
   
-  const handleDeleteRoom = (roomId: string) => {
-    toast.success(`Room deleted successfully`);
+  const handleEditRoom = async (room: Room) => {
+    toast.info(`Edit room: ${room.name}`);
+    // Implement edit functionality
+  };
+  
+  const handleDeleteRoom = async (roomId: string) => {
+    try {
+      // Check if room is being used in allocations
+      const { data: allocations, error: checkError } = await supabase
+        .from('room_allocations')
+        .select('id')
+        .eq('room_id', roomId);
+      
+      if (checkError) throw checkError;
+      
+      if (allocations && allocations.length > 0) {
+        toast.error("Cannot delete room with active allocations");
+        return;
+      }
+      
+      // If room is not being used, delete it
+      const { error } = await supabase
+        .from('accommodation_rooms')
+        .delete()
+        .eq('id', roomId);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setRooms(rooms.filter(room => room.id !== roomId));
+      toast.success("Room deleted successfully");
+    } catch (error) {
+      console.error("Error deleting room:", error);
+      toast.error("Failed to delete room");
+    }
   };
   
   const handleRoomClick = (room: Room) => {
     toast.info(`Viewing room: ${room.name}`);
+    // Implement view room details functionality
   };
   
+  const renderRoomList = () => {
+    if (loading) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Building className="h-12 w-12 text-muted-foreground mb-4 animate-pulse" />
+          <h3 className="text-xl font-medium mb-1">Loading rooms...</h3>
+        </div>
+      );
+    }
+
+    if (filteredRooms.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Building className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-xl font-medium mb-1">No rooms found</h3>
+          <p className="text-muted-foreground max-w-sm">
+            {searchQuery ? 'Try adjusting your search query' : 'There are no rooms added yet'}
+          </p>
+          {!searchQuery && (
+            <Button className="mt-4" onClick={handleOpenRoomDialog}>
+              Add Room
+            </Button>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {filteredRooms.map((room) => (
+          <RoomCard
+            key={room.id}
+            room={room}
+            onEdit={handleEditRoom}
+            onDelete={handleDeleteRoom}
+            onClick={handleRoomClick}
+          />
+        ))}
+      </div>
+    );
+  };
+
   return (
     <Layout>
       <div className="page-container">
@@ -63,7 +213,7 @@ const Rooms = () => {
             </p>
           </div>
           
-          <Button className="rounded-md">
+          <Button className="rounded-md" onClick={handleOpenRoomDialog}>
             <Plus className="mr-2 h-4 w-4" />
             Add Room
           </Button>
@@ -95,77 +245,25 @@ const Rooms = () => {
           </TabsList>
           
           <TabsContent value="all" className="mt-6">
-            {filteredRooms.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Building className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-medium mb-1">No rooms found</h3>
-                <p className="text-muted-foreground max-w-sm">
-                  {searchQuery ? 'Try adjusting your search query' : 'There are no rooms added yet'}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredRooms.map((room) => (
-                  <RoomCard
-                    key={room.id}
-                    room={room}
-                    onEdit={handleEditRoom}
-                    onDelete={handleDeleteRoom}
-                    onClick={handleRoomClick}
-                  />
-                ))}
-              </div>
-            )}
+            {renderRoomList()}
           </TabsContent>
           
           <TabsContent value="available" className="mt-6">
-            {filteredRooms.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Building className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-medium mb-1">No available rooms</h3>
-                <p className="text-muted-foreground max-w-sm">
-                  {searchQuery ? 'Try adjusting your search query' : 'There are no available rooms at the moment'}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredRooms.map((room) => (
-                  <RoomCard
-                    key={room.id}
-                    room={room}
-                    onEdit={handleEditRoom}
-                    onDelete={handleDeleteRoom}
-                    onClick={handleRoomClick}
-                  />
-                ))}
-              </div>
-            )}
+            {renderRoomList()}
           </TabsContent>
           
           <TabsContent value="full" className="mt-6">
-            {filteredRooms.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Building className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-medium mb-1">No full rooms</h3>
-                <p className="text-muted-foreground max-w-sm">
-                  {searchQuery ? 'Try adjusting your search query' : 'There are no fully occupied rooms at the moment'}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredRooms.map((room) => (
-                  <RoomCard
-                    key={room.id}
-                    room={room}
-                    onEdit={handleEditRoom}
-                    onDelete={handleDeleteRoom}
-                    onClick={handleRoomClick}
-                  />
-                ))}
-              </div>
-            )}
+            {renderRoomList()}
           </TabsContent>
         </Tabs>
+
+        {/* Room Creation Dialog */}
+        <RoomFormDialog
+          isOpen={isRoomDialogOpen}
+          onOpenChange={setIsRoomDialogOpen}
+          onSave={handleSaveRoom}
+          onCancel={handleCancelRoomDialog}
+        />
       </div>
     </Layout>
   );
