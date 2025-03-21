@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Building, Bed, Users, DotsHorizontal, Edit, Trash2, PlusCircle, MapPin, Hotel, Home, Tent } from 'lucide-react';
+import { Building, Bed, Users, MoreHorizontal, Edit, Trash2, PlusCircle, MapPin, Hotel, Home, Tent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -113,7 +113,7 @@ const RoomCard = ({ room, onEdit, onDelete, onClick, onAssign }: RoomCardProps) 
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
             <Button variant="ghost" size="icon">
-              <DotsHorizontal className="h-4 w-4" />
+              <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           
