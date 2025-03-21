@@ -21,7 +21,7 @@ const Index = () => {
       const { error: allocationsError } = await supabase
         .from('room_allocations')
         .delete()
-        .is('id', 'not.null');
+        .neq('id', '00000000-0000-0000-0000-000000000000');
         
       if (allocationsError) throw allocationsError;
       
@@ -29,7 +29,7 @@ const Index = () => {
       const { error: roomsUpdateError } = await supabase
         .from('accommodation_rooms')
         .update({ occupied: 0 })
-        .is('id', 'not.null');
+        .neq('id', '00000000-0000-0000-0000-000000000000');
         
       if (roomsUpdateError) throw roomsUpdateError;
       
@@ -37,7 +37,7 @@ const Index = () => {
       const { error: roomsError } = await supabase
         .from('accommodation_rooms')
         .delete()
-        .is('id', 'not.null');
+        .neq('id', '00000000-0000-0000-0000-000000000000');
         
       if (roomsError) throw roomsError;
       
@@ -45,7 +45,7 @@ const Index = () => {
       const { error: peopleError } = await supabase
         .from('women_attendees')
         .delete()
-        .is('id', 'not.null');
+        .neq('id', '00000000-0000-0000-0000-000000000000');
         
       if (peopleError) throw peopleError;
       
