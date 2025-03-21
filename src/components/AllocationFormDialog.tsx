@@ -3,6 +3,7 @@ import { Person } from '@/components/PersonCard';
 import { Room } from '@/components/RoomCard';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,9 @@ interface AllocationFormDialogProps {
   onSave: () => void;
   onCancel: () => void;
   onCreateRoom: () => void;
+  selectedPeople?: Person[];
+  onMultiPersonSelect?: (person: Person, selected: boolean) => void;
+  multiSelectMode?: boolean;
 }
 
 const AllocationFormDialog = ({
@@ -33,7 +37,10 @@ const AllocationFormDialog = ({
   onRoomSelect,
   onSave,
   onCancel,
-  onCreateRoom
+  onCreateRoom,
+  selectedPeople = [],
+  onMultiPersonSelect,
+  multiSelectMode = false
 }: AllocationFormDialogProps) => {
   const form = useForm({
     defaultValues: {
@@ -41,20 +48,33 @@ const AllocationFormDialog = ({
     },
   });
 
+  // Calculate remaining capacity for the selected room
+  const remainingCapacity = selectedRoom ? selectedRoom.capacity - selectedRoom.occupied : 0;
+  const canAddMore = selectedPeople.length < remainingCapacity;
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
           <DialogTitle>Create Room Allocation</DialogTitle>
           <DialogDescription>
-            Assign an attendee to a room. Each room has a limited capacity.
+            {multiSelectMode 
+              ? `Assign multiple attendees to room. This room can accommodate ${remainingCapacity} more people.`
+              : 'Assign an attendee to a room. Each room has a limited capacity.'}
           </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
           <div className="grid gap-4 py-4">
             <FormItem>
-              <FormLabel>Select Attendee</FormLabel>
+              <FormLabel className="flex justify-between">
+                <span>Select Attendee{multiSelectMode ? '(s)' : ''}</span>
+                {selectedRoom && multiSelectMode && (
+                  <span className="text-sm text-muted-foreground">
+                    Selected: {selectedPeople.length}/{remainingCapacity + selectedPeople.length}
+                  </span>
+                )}
+              </FormLabel>
               <div className="max-h-[200px] overflow-y-auto border rounded-md p-2">
                 {people.length === 0 ? (
                   <Alert>
@@ -66,12 +86,48 @@ const AllocationFormDialog = ({
                   people.map(person => (
                     <div 
                       key={person.id}
-                      className={`p-2 my-1 cursor-pointer rounded-md ${selectedPerson?.id === person.id ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-                      onClick={() => onPersonSelect(person)}
+                      className={`p-2 my-1 rounded-md ${
+                        multiSelectMode 
+                          ? 'hover:bg-muted cursor-pointer flex items-center' 
+                          : `cursor-pointer ${selectedPerson?.id === person.id ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`
+                      }`}
+                      onClick={() => !multiSelectMode && onPersonSelect(person)}
                     >
-                      <div className="font-medium">{person.name}</div>
-                      <div className="text-sm opacity-90">{person.department || person.email}</div>
-                      {person.roomId && <div className="text-xs mt-1">Currently in: {person.roomName}</div>}
+                      {multiSelectMode && onMultiPersonSelect ? (
+                        <>
+                          <Checkbox
+                            id={`person-${person.id}`}
+                            checked={selectedPeople.some(p => p.id === person.id)}
+                            onCheckedChange={(checked) => {
+                              if (!checked && selectedPeople.some(p => p.id === person.id)) {
+                                onMultiPersonSelect(person, false);
+                              } else if (checked && !selectedPeople.some(p => p.id === person.id)) {
+                                if (canAddMore || selectedPeople.some(p => p.id === person.id)) {
+                                  onMultiPersonSelect(person, true);
+                                }
+                              }
+                            }}
+                            disabled={!canAddMore && !selectedPeople.some(p => p.id === person.id)}
+                            className="mr-2"
+                          />
+                          <div className="flex-1" onClick={(e) => {
+                            e.stopPropagation();
+                            if (canAddMore || selectedPeople.some(p => p.id === person.id)) {
+                              onMultiPersonSelect(person, !selectedPeople.some(p => p.id === person.id));
+                            }
+                          }}>
+                            <div className="font-medium">{person.name}</div>
+                            <div className="text-sm opacity-90">{person.department || person.email}</div>
+                            {person.roomId && <div className="text-xs mt-1">Currently in: {person.roomName}</div>}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="font-medium">{person.name}</div>
+                          <div className="text-sm opacity-90">{person.department || person.email}</div>
+                          {person.roomId && <div className="text-xs mt-1">Currently in: {person.roomName}</div>}
+                        </>
+                      )}
                     </div>
                   ))
                 )}
@@ -111,7 +167,11 @@ const AllocationFormDialog = ({
                             ? 'bg-muted text-muted-foreground' 
                             : 'hover:bg-muted'
                       }`}
-                      onClick={() => room.occupied < room.capacity && onRoomSelect(room)}
+                      onClick={() => {
+                        if (room.occupied < room.capacity) {
+                          onRoomSelect(room);
+                        }
+                      }}
                     >
                       <div className="font-medium">{room.name}</div>
                       <div className="text-sm">
@@ -119,6 +179,11 @@ const AllocationFormDialog = ({
                       </div>
                       <div className="text-xs mt-1">
                         Occupancy: {room.occupied}/{room.capacity}
+                        {room.capacity > 1 && (
+                          <span className="ml-2">
+                            {room.capacity > 1 ? `(${room.capacity - room.occupied} beds available)` : ''}
+                          </span>
+                        )}
                         {room.occupied >= room.capacity && ' (Full)'}
                       </div>
                     </div>
@@ -146,9 +211,13 @@ const AllocationFormDialog = ({
           <Button variant="outline" onClick={onCancel}>Cancel</Button>
           <Button 
             onClick={onSave} 
-            disabled={!selectedPerson || !selectedRoom}
+            disabled={
+              multiSelectMode 
+                ? selectedPeople.length === 0 || !selectedRoom 
+                : !selectedPerson || !selectedRoom
+            }
           >
-            Save Allocation
+            Save Allocation{multiSelectMode && selectedPeople.length > 0 ? `s (${selectedPeople.length})` : ''}
           </Button>
         </DialogFooter>
       </DialogContent>
