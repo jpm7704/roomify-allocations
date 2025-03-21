@@ -36,7 +36,7 @@ const AttendeeList = ({
         <UserRound className="h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-xl font-medium mb-1">No attendees found</h3>
         <p className="text-muted-foreground max-w-sm">
-          {searchQuery ? 'Try adjusting your search query' : 'There are no women attendees added yet'}
+          {searchQuery ? 'Try adjusting your search query' : 'There are no attendees added yet'}
         </p>
       </div>
     );

@@ -61,7 +61,7 @@ const AttendeeTabs = ({
       <TabsContent value="assigned" className="mt-6">
         <AttendeeList
           loading={loading}
-          people={filteredPeople}
+          people={filteredPeople.filter(person => !!person.roomId)}
           searchQuery={searchQuery}
           onEdit={onEdit}
           onDelete={onDelete}
@@ -73,7 +73,7 @@ const AttendeeTabs = ({
       <TabsContent value="unassigned" className="mt-6">
         <AttendeeList
           loading={loading}
-          people={filteredPeople}
+          people={filteredPeople.filter(person => !person.roomId)}
           searchQuery={searchQuery}
           onEdit={onEdit}
           onDelete={onDelete}
