@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -6,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { Bed, Tent, Home } from 'lucide-react';
+import { useState } from 'react';
 
 interface RoomFormValues {
   name: string;
@@ -29,6 +29,8 @@ const RoomFormDialog = ({
   onSave,
   onCancel
 }: RoomFormDialogProps) => {
+  const [selectedType, setSelectedType] = useState('Chalet');
+  
   const roomForm = useForm<RoomFormValues>({
     defaultValues: {
       name: '',
@@ -56,6 +58,10 @@ const RoomFormDialog = ({
     }
   };
 
+  const getNameLabel = () => {
+    return selectedType === 'Personal tent' ? 'Tent Name*' : 'Room Name*';
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -76,7 +82,10 @@ const RoomFormDialog = ({
                   <FormLabel>Room Type*</FormLabel>
                   <FormControl>
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setSelectedType(value);
+                      }}
                       defaultValue={field.value}
                     >
                       <SelectTrigger>
@@ -108,9 +117,9 @@ const RoomFormDialog = ({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Room Name*</FormLabel>
+                  <FormLabel>{getNameLabel()}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Room 101" required {...field} />
+                    <Input placeholder={selectedType === 'Personal tent' ? "e.g. Tent 101" : "e.g. Room 101"} required {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
