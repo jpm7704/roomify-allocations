@@ -97,6 +97,11 @@
 
   body {
     @apply bg-background text-foreground;
+    background-image: url('/lovable-uploads/e3426706-3b88-41ab-a6e9-b96fcdec43c1.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
   }
   
   ::selection {

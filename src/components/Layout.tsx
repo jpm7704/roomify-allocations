@@ -11,7 +11,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const [navOpen, setNavOpen] = useState(true);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   
   // Load theme preference from localStorage on initial load
   useEffect(() => {
@@ -19,9 +19,11 @@ const Layout = ({ children }: LayoutProps) => {
     if (savedTheme) {
       setTheme(savedTheme);
       document.documentElement.classList.toggle('dark', savedTheme === 'dark');
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    } else {
+      // Default to dark theme to match jellyfish background
       setTheme('dark');
       document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     }
   }, []);
   
@@ -44,7 +46,7 @@ const Layout = ({ children }: LayoutProps) => {
   ];
 
   return (
-    <div className="min-h-screen flex w-full bg-background">
+    <div className="min-h-screen flex w-full">
       {/* Sidebar */}
       <Sidebar 
         navOpen={navOpen} 
@@ -57,7 +59,7 @@ const Layout = ({ children }: LayoutProps) => {
       {/* Mobile overlay */}
       {navOpen && (
         <div 
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-10 sm:hidden" 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-10 sm:hidden" 
           onClick={() => setNavOpen(false)}
         />
       )}
