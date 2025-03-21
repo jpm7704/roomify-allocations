@@ -1,7 +1,10 @@
 
+import { useState } from 'react';
 import { Loader2, Users } from 'lucide-react';
 import AllocationCard, { Allocation } from '@/components/AllocationCard';
 import { Button } from '@/components/ui/button';
+import AllocationTable from '@/components/allocation/AllocationTable';
+import ViewToggle, { ViewMode } from '@/components/allocation/ViewToggle';
 
 interface AllocationsListProps {
   loading: boolean;
@@ -24,6 +27,8 @@ const AllocationsList = ({
   onCreateAllocation,
   hasRooms
 }: AllocationsListProps) => {
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
@@ -60,15 +65,29 @@ const AllocationsList = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {allocations.map((allocation) => (
-        <AllocationCard
-          key={allocation.id}
-          allocation={allocation}
-          onRemove={onRemove}
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+      </div>
+      
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {allocations.map((allocation) => (
+            <AllocationCard
+              key={allocation.id}
+              allocation={allocation}
+              onRemove={onRemove}
+              onClick={onClick}
+            />
+          ))}
+        </div>
+      ) : (
+        <AllocationTable 
+          allocations={allocations}
           onClick={onClick}
+          onRemove={onRemove}
         />
-      ))}
+      )}
     </div>
   );
 };
