@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bed, User, MoreVertical, Pencil, Trash2, Home, Tent, Hotel } from 'lucide-react';
+import { Bed, User, MoreVertical, Pencil, Trash2, Home, Tent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -38,16 +38,15 @@ const RoomCard = ({
   const isAvailable = room.occupied < room.capacity;
   
   const getRoomTypeIcon = () => {
-    if (!room.type) return <Hotel className="h-4 w-4 mr-2" />;
+    if (!room.type || room.type === 'Hotel') return <Home className="h-4 w-4 mr-2" />;
     
     switch (room.type) {
       case 'Chalet':
         return <Home className="h-4 w-4 mr-2" />;
       case 'Personal tent':
         return <Tent className="h-4 w-4 mr-2" />;
-      case 'Hotel':
       default:
-        return <Hotel className="h-4 w-4 mr-2" />;
+        return <Home className="h-4 w-4 mr-2" />;
     }
   };
   

@@ -5,7 +5,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
-import { Bed, Tent, Home, Hotel } from 'lucide-react';
+import { Bed, Tent, Home } from 'lucide-react';
 
 interface RoomFormValues {
   name: string;
@@ -36,7 +36,7 @@ const RoomFormDialog = ({
       building: 'Main Building',
       floor: '1',
       description: '',
-      type: 'Hotel',
+      type: 'Chalet',
     },
   });
 
@@ -51,9 +51,8 @@ const RoomFormDialog = ({
         return <Home className="h-4 w-4 mr-2" />;
       case 'Personal tent':
         return <Tent className="h-4 w-4 mr-2" />;
-      case 'Hotel':
       default:
-        return <Hotel className="h-4 w-4 mr-2" />;
+        return <Home className="h-4 w-4 mr-2" />;
     }
   };
 
@@ -84,12 +83,6 @@ const RoomFormDialog = ({
                         <SelectValue placeholder="Select room type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Hotel">
-                          <div className="flex items-center">
-                            <Hotel className="h-4 w-4 mr-2" />
-                            <span>Hotel</span>
-                          </div>
-                        </SelectItem>
                         <SelectItem value="Chalet">
                           <div className="flex items-center">
                             <Home className="h-4 w-4 mr-2" />
