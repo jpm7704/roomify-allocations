@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building, User, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -61,11 +60,6 @@ const Index = () => {
     }
   };
 
-  // Clear all data immediately when the component mounts
-  useEffect(() => {
-    clearAllData();
-  }, []);
-  
   // Fetch rooms data
   const { data: rooms } = useQuery({
     queryKey: ['rooms'],
