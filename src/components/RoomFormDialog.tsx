@@ -5,6 +5,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
+import { Bed, Tent, Home, Hotel } from 'lucide-react';
 
 interface RoomFormValues {
   name: string;
@@ -12,6 +13,7 @@ interface RoomFormValues {
   building: string;
   floor: string;
   description: string;
+  type: string;
 }
 
 interface RoomFormDialogProps {
@@ -34,12 +36,25 @@ const RoomFormDialog = ({
       building: 'Main Building',
       floor: '1',
       description: '',
+      type: 'Hotel',
     },
   });
 
   const handleSave = () => {
     const values = roomForm.getValues();
     onSave(values);
+  };
+
+  const getRoomTypeIcon = (type: string) => {
+    switch (type) {
+      case 'Chalet':
+        return <Home className="h-4 w-4 mr-2" />;
+      case 'Personal tent':
+        return <Tent className="h-4 w-4 mr-2" />;
+      case 'Hotel':
+      default:
+        return <Hotel className="h-4 w-4 mr-2" />;
+    }
   };
 
   return (
@@ -62,6 +77,47 @@ const RoomFormDialog = ({
                   <FormLabel>Room Name*</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. Room 101" required {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={roomForm.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Room Type*</FormLabel>
+                  <FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select room type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Hotel">
+                          <div className="flex items-center">
+                            <Hotel className="h-4 w-4 mr-2" />
+                            <span>Hotel</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="Chalet">
+                          <div className="flex items-center">
+                            <Home className="h-4 w-4 mr-2" />
+                            <span>Chalet</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="Personal tent">
+                          <div className="flex items-center">
+                            <Tent className="h-4 w-4 mr-2" />
+                            <span>Personal tent</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -86,6 +86,7 @@ const Rooms = () => {
           building: values.building || 'Main Building',
           floor: values.floor || '1',
           description: values.description,
+          type: values.type || 'Hotel',
           occupied: 0
         })
         .select();
@@ -100,7 +101,8 @@ const Rooms = () => {
           occupied: 0,
           floor: data[0].floor || '1',
           building: data[0].building || 'Main Building',
-          description: data[0].description
+          description: data[0].description,
+          type: data[0].type || 'Hotel'
         };
 
         setRooms([...rooms, newRoom]);
