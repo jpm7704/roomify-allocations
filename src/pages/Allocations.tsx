@@ -1,19 +1,17 @@
-
 import { useState, useEffect } from 'react';
-import { Plus, Search, Users, Loader2, Building } from 'lucide-react';
+import { Plus, Search, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Layout from '@/components/Layout';
-import AllocationCard, { Allocation } from '@/components/AllocationCard';
+import { Allocation } from '@/components/AllocationCard';
 import { Person } from '@/components/PersonCard';
 import { Room } from '@/components/RoomCard';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import AllocationsList from '@/components/AllocationsList';
+import AllocationFormDialog from '@/components/AllocationFormDialog';
+import RoomFormDialog from '@/components/RoomFormDialog';
 import { useForm } from 'react-hook-form';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const Allocations = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,16 +27,6 @@ const Allocations = () => {
   const form = useForm({
     defaultValues: {
       notes: '',
-    },
-  });
-
-  const roomForm = useForm({
-    defaultValues: {
-      name: '',
-      capacity: '2',
-      building: 'Main Building',
-      floor: '1',
-      description: '',
     },
   });
 
@@ -227,19 +215,14 @@ const Allocations = () => {
 
   const handleCreateRoom = () => {
     setIsRoomDialogOpen(true);
-    roomForm.reset({
-      name: '',
-      capacity: '2',
-      building: 'Main Building',
-      floor: '1',
-      description: '',
-    });
   };
 
-  const handleSaveRoom = async () => {
+  const handleCancelRoomDialog = () => {
+    setIsRoomDialogOpen(false);
+  };
+
+  const handleSaveRoom = async (values: any) => {
     try {
-      const values = roomForm.getValues();
-      
       if (!values.name || !values.capacity) {
         toast.error("Room name and capacity are required");
         return;
@@ -419,6 +402,14 @@ const Allocations = () => {
       toast.error("Failed to save room allocation");
     }
   };
+
+  const handleCancelAllocationDialog = () => {
+    setIsDialogOpen(false);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+  };
   
   return (
     <Layout>
@@ -456,281 +447,40 @@ const Allocations = () => {
         </div>
         
         <div className="mt-6">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
-              <h3 className="text-xl font-medium">Loading allocations...</h3>
-            </div>
-          ) : filteredAllocations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Users className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-xl font-medium mb-1">No allocations found</h3>
-              <p className="text-muted-foreground max-w-sm">
-                {searchQuery ? 'Try adjusting your search query' : 'There are no room allocations yet'}
-              </p>
-              
-              <div className="flex gap-3 mt-6">
-                {rooms.length === 0 && (
-                  <Button onClick={handleCreateRoom}>
-                    Create a Room First
-                  </Button>
-                )}
-                <Button 
-                  onClick={() => searchQuery ? setSearchQuery('') : handleCreateAllocation()}
-                  disabled={rooms.length === 0}
-                >
-                  {searchQuery ? 'Clear Search' : 'Create Allocation'}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredAllocations.map((allocation) => (
-                <AllocationCard
-                  key={allocation.id}
-                  allocation={allocation}
-                  onRemove={handleRemoveAllocation}
-                  onClick={handleAllocationClick}
-                />
-              ))}
-            </div>
-          )}
+          <AllocationsList
+            loading={loading}
+            allocations={filteredAllocations}
+            searchQuery={searchQuery}
+            onRemove={handleRemoveAllocation}
+            onClick={handleAllocationClick}
+            onCreateRoom={handleCreateRoom}
+            onCreateAllocation={searchQuery ? handleClearSearch : handleCreateAllocation}
+            hasRooms={rooms.length > 0}
+          />
         </div>
 
         {/* Allocation Dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-[550px]">
-            <DialogHeader>
-              <DialogTitle>Create Room Allocation</DialogTitle>
-              <DialogDescription>
-                Assign an attendee to a room. Each room has a limited capacity.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <Form {...form}>
-              <div className="grid gap-4 py-4">
-                <FormItem>
-                  <FormLabel>Select Attendee</FormLabel>
-                  <div className="max-h-[200px] overflow-y-auto border rounded-md p-2">
-                    {people.length === 0 ? (
-                      <Alert>
-                        <AlertDescription>
-                          No women attendees found. Please add attendees first.
-                        </AlertDescription>
-                      </Alert>
-                    ) : (
-                      people.map(person => (
-                        <div 
-                          key={person.id}
-                          className={`p-2 my-1 cursor-pointer rounded-md ${selectedPerson?.id === person.id ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-                          onClick={() => handlePersonSelect(person)}
-                        >
-                          <div className="font-medium">{person.name}</div>
-                          <div className="text-sm opacity-90">{person.department || person.email}</div>
-                          {person.roomId && <div className="text-xs mt-1">Currently in: {person.roomName}</div>}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </FormItem>
-
-                <FormItem>
-                  <FormLabel>Select Room</FormLabel>
-                  <div className="max-h-[200px] overflow-y-auto border rounded-md p-2">
-                    {rooms.length === 0 ? (
-                      <Alert>
-                        <AlertDescription>
-                          No rooms found. Please add rooms first.
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="mt-2 w-full"
-                            onClick={() => {
-                              setIsDialogOpen(false);
-                              setTimeout(() => {
-                                handleCreateRoom();
-                              }, 100);
-                            }}
-                          >
-                            Add Room
-                          </Button>
-                        </AlertDescription>
-                      </Alert>
-                    ) : (
-                      rooms.map(room => (
-                        <div 
-                          key={room.id}
-                          className={`p-2 my-1 cursor-pointer rounded-md ${
-                            selectedRoom?.id === room.id 
-                              ? 'bg-primary text-primary-foreground' 
-                              : room.occupied >= room.capacity 
-                                ? 'bg-muted text-muted-foreground' 
-                                : 'hover:bg-muted'
-                          }`}
-                          onClick={() => room.occupied < room.capacity && handleRoomSelect(room)}
-                        >
-                          <div className="font-medium">{room.name}</div>
-                          <div className="text-sm">
-                            {room.building} {room.floor && `- Floor ${room.floor}`}
-                          </div>
-                          <div className="text-xs mt-1">
-                            Occupancy: {room.occupied}/{room.capacity}
-                            {room.occupied >= room.capacity && ' (Full)'}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </FormItem>
-
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Notes (Optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Any special requirements or notes" {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </Form>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-              <Button 
-                onClick={handleSaveAllocation} 
-                disabled={!selectedPerson || !selectedRoom}
-              >
-                Save Allocation
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <AllocationFormDialog
+          isOpen={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          people={people}
+          rooms={rooms}
+          selectedPerson={selectedPerson}
+          selectedRoom={selectedRoom}
+          onPersonSelect={handlePersonSelect}
+          onRoomSelect={handleRoomSelect}
+          onSave={handleSaveAllocation}
+          onCancel={handleCancelAllocationDialog}
+          onCreateRoom={handleCreateRoom}
+        />
 
         {/* Room Creation Dialog */}
-        <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Add New Room</DialogTitle>
-              <DialogDescription>
-                Create a new accommodation room for attendees.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <Form {...roomForm}>
-              <div className="grid gap-4 py-4">
-                <FormField
-                  control={roomForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Room Name*</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Room 101" required {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={roomForm.control}
-                  name="capacity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Capacity*</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min="1" 
-                          required
-                          placeholder="Number of beds" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={roomForm.control}
-                    name="building"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Building</FormLabel>
-                        <FormControl>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select building" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Main Building">Main Building</SelectItem>
-                              <SelectItem value="East Wing">East Wing</SelectItem>
-                              <SelectItem value="West Wing">West Wing</SelectItem>
-                              <SelectItem value="South Block">South Block</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={roomForm.control}
-                    name="floor"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Floor</FormLabel>
-                        <FormControl>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select floor" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="G">Ground</SelectItem>
-                              <SelectItem value="1">First</SelectItem>
-                              <SelectItem value="2">Second</SelectItem>
-                              <SelectItem value="3">Third</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={roomForm.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description (Optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Any additional details about the room" {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </Form>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsRoomDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleSaveRoom}>Save Room</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <RoomFormDialog
+          isOpen={isRoomDialogOpen}
+          onOpenChange={setIsRoomDialogOpen}
+          onSave={handleSaveRoom}
+          onCancel={handleCancelRoomDialog}
+        />
       </div>
     </Layout>
   );
