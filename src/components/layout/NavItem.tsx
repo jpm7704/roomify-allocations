@@ -10,7 +10,7 @@ interface NavItemProps {
   label: string;
   active: boolean;
   collapsed: boolean;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent) => void;
 }
 
 const NavItem = ({ to, icon, label, active, collapsed, onClick }: NavItemProps) => {
