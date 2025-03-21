@@ -17,6 +17,7 @@ import Onboarding from "./pages/Onboarding";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Reservations from "./pages/Reservations";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +80,7 @@ const App = () => {
             <Route path="/rooms" element={<Rooms />} />
             <Route path="/people" element={<People />} />
             <Route path="/allocations" element={<Allocations />} />
+            <Route path="/profile" element={<Profile />} />
             
             {/* For testing purposes, always redirect to onboarding */}
             <Route 
