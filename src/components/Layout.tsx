@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Building, ChevronLeft, Home, Menu, Moon, Sun, UserRound, Users } from 'lucide-react';
+import { Building, ChevronLeft, ChevronRight, Home, Menu, Moon, Sun, UserRound, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -22,7 +22,7 @@ const NavItem = ({ to, icon, label, active, onClick }: NavItemProps) => {
           <Link 
             to={to} 
             className={cn(
-              "relative flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-300 group",
+              "relative flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 group",
               active 
                 ? "text-primary font-medium bg-primary/10" 
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -30,9 +30,9 @@ const NavItem = ({ to, icon, label, active, onClick }: NavItemProps) => {
             onClick={onClick}
           >
             <div className="flex-shrink-0 w-5 h-5">{icon}</div>
-            <span className="transition-all duration-300">{label}</span>
+            <span className="transition-all duration-300 font-medium">{label}</span>
             {active && (
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-full" />
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-full" />
             )}
           </Link>
         </TooltipTrigger>
@@ -53,10 +53,23 @@ const Layout = ({ children }: LayoutProps) => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const location = useLocation();
   
+  // Load theme preference from localStorage on initial load
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setTheme('dark');
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+  
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
     document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    localStorage.setItem('theme', newTheme);
   };
   
   const toggleNav = () => {
@@ -74,31 +87,36 @@ const Layout = ({ children }: LayoutProps) => {
     <div className="min-h-screen flex w-full bg-background">
       {/* Sidebar/Navigation */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-20 w-64 bg-card border-r border-border transition-all duration-300 transform",
-        navOpen ? "translate-x-0" : "-translate-x-full sm:translate-x-0 sm:w-20"
+        "fixed inset-y-0 left-0 z-20 bg-card border-r border-border transition-all duration-300 transform",
+        navOpen ? "w-64" : "w-20",
+        "sm:translate-x-0"
       )}>
         <div className="h-full flex flex-col">
-          <div className="p-4 flex items-center justify-between border-b border-border">
-            <h2 className={cn(
-              "font-bold text-xl transition-opacity duration-300",
+          <div className="p-5 flex items-center justify-between border-b border-border">
+            <div className={cn(
+              "font-bold text-xl transition-opacity duration-300 flex items-center gap-3",
               navOpen ? "opacity-100" : "opacity-0 sm:hidden"
             )}>
-              Roomify
-            </h2>
+              <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
+                <Building className="w-5 h-5 text-primary" />
+              </div>
+              <span className="text-foreground">Roomify</span>
+            </div>
             <Button 
               variant="ghost" 
               size="icon" 
-              className="hidden sm:flex" 
+              className="rounded-full hover:bg-primary/10" 
               onClick={toggleNav}
             >
-              <ChevronLeft className={cn(
-                "h-5 w-5 transition-transform duration-300",
-                !navOpen && "rotate-180"
-              )} />
+              {navOpen ? (
+                <ChevronLeft className="h-5 w-5" />
+              ) : (
+                <ChevronRight className="h-5 w-5" />
+              )}
             </Button>
           </div>
           
-          <nav className="flex-1 py-6 px-2 space-y-1 overflow-y-auto">
+          <nav className="flex-1 py-6 px-3 space-y-2 overflow-y-auto">
             {navItems.map((item) => (
               <NavItem
                 key={item.to}
@@ -106,14 +124,19 @@ const Layout = ({ children }: LayoutProps) => {
                 icon={item.icon}
                 label={item.label}
                 active={location.pathname === item.to}
-                onClick={() => setNavOpen(false)}
+                onClick={() => {
+                  // Close sidebar on mobile when navigating
+                  if (window.innerWidth < 640) {
+                    setNavOpen(false);
+                  }
+                }}
               />
             ))}
           </nav>
           
-          <div className="p-4 border-t border-border flex justify-between items-center">
+          <div className="p-5 border-t border-border flex justify-between items-center">
             <Button 
-              variant="ghost" 
+              variant="outline" 
               size="icon" 
               onClick={toggleTheme}
               className="rounded-full"
@@ -125,17 +148,12 @@ const Layout = ({ children }: LayoutProps) => {
               )}
             </Button>
             
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="sm:hidden" 
-              onClick={toggleNav}
-            >
-              <ChevronLeft className={cn(
-                "h-5 w-5 transition-transform duration-300",
-                !navOpen && "rotate-180"
-              )} />
-            </Button>
+            <div className={cn(
+              "text-sm text-muted-foreground transition-opacity duration-300",
+              navOpen ? "opacity-100" : "opacity-0 hidden"
+            )}>
+              v1.0.0
+            </div>
           </div>
         </div>
       </div>
@@ -157,15 +175,29 @@ const Layout = ({ children }: LayoutProps) => {
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <h2 className="font-bold text-xl">Roomify</h2>
-        <div className="w-10" />
+        <div className="flex items-center gap-2">
+          <Building className="w-5 h-5 text-primary" />
+          <h2 className="font-bold text-xl">Roomify</h2>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={toggleTheme}
+          className="rounded-full"
+        >
+          {theme === 'light' ? (
+            <Moon className="h-5 w-5" />
+          ) : (
+            <Sun className="h-5 w-5" />
+          )}
+        </Button>
       </div>
       
       {/* Main content */}
       <main className={cn(
         "flex-1 transition-all duration-300",
-        navOpen ? "ml-0 sm:ml-64" : "ml-0 sm:ml-20",
-        "mt-16 sm:mt-0"
+        navOpen ? "sm:ml-64" : "sm:ml-20",
+        "pt-16 sm:pt-0"
       )}>
         <div className="min-h-screen pt-6 pb-12 px-4 sm:px-6 page-transition">
           {children}
