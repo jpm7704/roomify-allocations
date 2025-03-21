@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { Bed, User, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Bed, User, MoreVertical, Pencil, Trash2, Home, Tent, Hotel } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +14,7 @@ export interface Room {
   description?: string;
   floor?: string;
   building?: string;
+  type?: string;
 }
 
 interface RoomCardProps {
@@ -37,6 +37,20 @@ const RoomCard = ({
   const occupancyPercentage = Math.round((room.occupied / room.capacity) * 100);
   const isAvailable = room.occupied < room.capacity;
   
+  const getRoomTypeIcon = () => {
+    if (!room.type) return <Hotel className="h-4 w-4 mr-2" />;
+    
+    switch (room.type) {
+      case 'Chalet':
+        return <Home className="h-4 w-4 mr-2" />;
+      case 'Personal tent':
+        return <Tent className="h-4 w-4 mr-2" />;
+      case 'Hotel':
+      default:
+        return <Hotel className="h-4 w-4 mr-2" />;
+    }
+  };
+  
   return (
     <Card 
       className={cn(
@@ -52,7 +66,10 @@ const RoomCard = ({
       <CardHeader className="p-6 pb-0 flex flex-row items-start justify-between space-y-0">
         <div>
           <CardTitle className="text-xl font-semibold transition-colors duration-500 ease-in-out group-hover:text-primary">
-            {room.name}
+            <div className="flex items-center">
+              {getRoomTypeIcon()}
+              {room.name}
+            </div>
           </CardTitle>
           {(room.floor || room.building) && (
             <p className="text-sm text-muted-foreground mt-1">

@@ -71,20 +71,6 @@ const RoomFormDialog = ({
           <div className="grid gap-4 py-4">
             <FormField
               control={roomForm.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Room Name*</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Room 101" required {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={roomForm.control}
               name="type"
               render={({ field }) => (
                 <FormItem>
@@ -118,6 +104,20 @@ const RoomFormDialog = ({
                         </SelectItem>
                       </SelectContent>
                     </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={roomForm.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Room Name*</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Room 101" required {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
