@@ -1,13 +1,13 @@
 
 import { useState } from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import Layout from '@/components/Layout';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import NotesField from '@/components/allocation/NotesField';
 import {
   Form,
   FormField,
@@ -16,9 +16,12 @@ import {
   FormControl,
 } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { useEventRegistration } from '@/hooks/allocation-actions/useEventRegistration';
 
 const Reservations = () => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const { registerAttendee, isSubmitting } = useEventRegistration();
   
   const form = useForm({
     defaultValues: {
@@ -33,48 +36,58 @@ const Reservations = () => {
   });
 
   const handleSubmit = async (values: any) => {
-    setIsSubmitting(true);
     try {
-      // Insert into women_attendees table (same as People collection)
-      const { data, error } = await supabase
-        .from('women_attendees')
-        .insert({
-          name: values.name,
-          email: values.email,
-          phone: values.phone,
-          department: values.department,
-          home_church: values.homeChurch,
-          special_needs: values.specialNeeds
-        })
-        .select();
-
-      if (error) throw error;
-
-      toast.success("Reservation submitted successfully!");
-      form.reset({
-        name: '',
-        email: '',
-        phone: '',
-        department: '',
-        homeChurch: 'Harare City Centre Church',
-        specialNeeds: '',
-        eventName: 'SDA Women\'s Ministry Camp Meeting'
+      const result = await registerAttendee({
+        name: values.name,
+        email: values.email,
+        phone: values.phone,
+        department: values.department,
+        homeChurch: values.homeChurch,
+        specialNeeds: values.specialNeeds,
+        eventName: values.eventName
       });
+
+      if (result.success) {
+        toast.success("Registration submitted successfully!");
+        form.reset({
+          name: '',
+          email: '',
+          phone: '',
+          department: '',
+          homeChurch: 'Harare City Centre Church',
+          specialNeeds: '',
+          eventName: 'SDA Women\'s Ministry Camp Meeting'
+        });
+      } else {
+        toast.error("Failed to submit registration");
+      }
     } catch (error) {
       console.error("Error submitting reservation:", error);
-      toast.error("Failed to submit reservation");
-    } finally {
-      setIsSubmitting(false);
+      toast.error("Failed to submit registration");
     }
   };
 
+  const goToHome = () => {
+    navigate('/');
+  };
+
   return (
-    <Layout>
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 p-4">
       <div className="page-container max-w-2xl mx-auto">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={goToHome} 
+          className="mb-6"
+        >
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          Back to Home
+        </Button>
+        
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Event Reservation</h1>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">SDA Women's Ministry Camp Meeting</h1>
           <p className="text-muted-foreground">
-            Reserve your spot for the upcoming event without creating an account
+            Register for the upcoming event at Harare City Centre Church
           </p>
         </div>
 
@@ -82,9 +95,9 @@ const Reservations = () => {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
               <div className="bg-primary/5 rounded-lg p-4 mb-6">
-                <h2 className="font-semibold text-lg mb-2">SDA Women's Ministry Camp Meeting</h2>
+                <h2 className="font-semibold text-lg mb-2">Event Details</h2>
                 <p className="text-sm text-muted-foreground">
-                  Harare City Centre Church | August 5-7, 2023
+                  August 5-7, 2023 | Harare City Centre Church
                 </p>
               </div>
               
@@ -157,21 +170,12 @@ const Reservations = () => {
                 />
               </div>
               
-              <FormField
-                control={form.control}
+              <NotesField 
+                form={form}
                 name="specialNeeds"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Special Needs (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Any special requirements or accommodation needs" 
-                        className="min-h-[80px]"
-                        {...field} 
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
+                label="Special Needs"
+                placeholder="Any special requirements or accommodation needs"
+                multiline={true}
               />
               
               <div className="pt-4">
@@ -180,7 +184,7 @@ const Reservations = () => {
                   className="w-full" 
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Submitting..." : "Submit Reservation"}
+                  {isSubmitting ? "Submitting..." : "Register for Event"}
                 </Button>
                 
                 <p className="text-center text-sm text-muted-foreground mt-4">
@@ -191,7 +195,7 @@ const Reservations = () => {
           </Form>
         </div>
       </div>
-    </Layout>
+    </div>
   );
 };
 
