@@ -6,18 +6,12 @@ import { Person } from '@/components/PersonCard';
 import { Room } from '@/components/RoomCard';
 import { 
   fetchAllocationData, 
-  removeAllocationFromSupabase,
-  createRoomInSupabase,
-  createSingleAllocationInSupabase,
-  processMultipleAllocations,
   refreshAllocationData
 } from '@/services/allocationService';
 import {
   formatRooms,
   formatPeople,
   formatAllocations,
-  formatRefreshedData,
-  updatePeopleWithAllocations,
   filterAllocations as filterAllocationsByQuery
 } from '@/utils/allocationMappers';
 import { useAllocationState } from '@/hooks/useAllocationState';
