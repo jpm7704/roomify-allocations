@@ -119,7 +119,8 @@ export default {
 				float: 'float 4s ease-in-out infinite'
 			},
 			fontFamily: {
-				sans: ['Inter var', 'sans-serif']
+				sans: ['Bricolage Grotesque', 'sans-serif'],
+				bricolage: ['Bricolage Grotesque', 'sans-serif']
 			}
 		}
 	},
