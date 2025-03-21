@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import AllocationsList from '@/components/AllocationsList';
 import AllocationFormDialog from '@/components/AllocationFormDialog';
 import RoomFormDialog from '@/components/RoomFormDialog';
+import AllocationDetailsDialog from '@/components/AllocationDetailsDialog';
 import { useForm } from 'react-hook-form';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
@@ -30,6 +31,8 @@ const Allocations = () => {
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [selectedPeople, setSelectedPeople] = useState<Person[]>([]);
   const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [viewedAllocation, setViewedAllocation] = useState<Allocation | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -123,16 +126,13 @@ const Allocations = () => {
         setPeople(formattedPeople);
         setAllocations(formattedAllocations);
 
-        // Handle preselection of room from URL parameter
         if (roomIdFromUrl && formattedRooms.length > 0) {
           const roomToSelect = formattedRooms.find(room => room.id === roomIdFromUrl);
           if (roomToSelect) {
             setSelectedRoom(roomToSelect);
-            // If room has multiple beds, enable multi-select mode
             if (roomToSelect.capacity > 1 && roomToSelect.capacity - roomToSelect.occupied > 1) {
               setMultiSelectMode(true);
             }
-            // Open the allocation dialog
             setIsDialogOpen(true);
           }
         }
@@ -216,7 +216,17 @@ const Allocations = () => {
   };
   
   const handleAllocationClick = (allocation: Allocation) => {
-    toast.info(`Viewing allocation for ${allocation.person.name} in ${allocation.room.name}`);
+    setViewedAllocation(allocation);
+    setIsDetailsDialogOpen(true);
+  };
+
+  const handleEditAllocation = (allocation: Allocation) => {
+    setSelectedPerson(allocation.person);
+    setSelectedRoom(allocation.room);
+    setSelectedPeople([]);
+    form.reset({ notes: allocation.notes || '' });
+    setMultiSelectMode(false);
+    setIsDialogOpen(true);
   };
 
   const handlePersonSelect = (person: Person) => {
@@ -610,9 +620,18 @@ const Allocations = () => {
           onSave={handleSaveRoom}
           onCancel={handleCancelRoomDialog}
         />
+
+        <AllocationDetailsDialog
+          allocation={viewedAllocation}
+          isOpen={isDetailsDialogOpen}
+          onOpenChange={setIsDetailsDialogOpen}
+          onDelete={handleRemoveAllocation}
+          onEdit={handleEditAllocation}
+        />
       </div>
     </Layout>
   );
 };
 
 export default Allocations;
+
