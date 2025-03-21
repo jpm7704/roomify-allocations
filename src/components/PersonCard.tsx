@@ -43,7 +43,8 @@ const PersonCard = ({ person, onEdit, onDelete, onAssign, onClick }: PersonCardP
   return (
     <Card 
       className={cn(
-        "overflow-hidden border transition-all duration-300 item-transition",
+        "overflow-hidden transition-all duration-300 item-transition",
+        "bg-card/60 backdrop-blur-md border-border/30 shadow-sm",
         "hover:shadow-md hover:border-primary/20 group",
         isHovered && "ring-1 ring-primary/20"
       )}
@@ -66,11 +67,11 @@ const PersonCard = ({ person, onEdit, onDelete, onAssign, onClick }: PersonCardP
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={(e) => e.stopPropagation()}>
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="ios-card">
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit?.(person); }}>
               <Pencil className="mr-2 h-4 w-4" />
               <span>Edit</span>
@@ -88,7 +89,7 @@ const PersonCard = ({ person, onEdit, onDelete, onAssign, onClick }: PersonCardP
       
       <CardContent className="px-6 pb-6 pt-0">
         {person.department && (
-          <Badge variant="outline" className="mb-4">
+          <Badge variant="outline" className="mb-4 ios-badge">
             {person.department}
           </Badge>
         )}
@@ -103,11 +104,11 @@ const PersonCard = ({ person, onEdit, onDelete, onAssign, onClick }: PersonCardP
         )}
       </CardContent>
       
-      <CardFooter className="px-6 py-4 bg-muted/30 flex justify-end border-t">
+      <CardFooter className="px-6 py-4 bg-muted/30 backdrop-blur-sm flex justify-end border-t border-border/20">
         <Button 
           size="sm" 
           variant={!isAssigned ? "default" : "outline"}
-          className="transition-all duration-300"
+          className="transition-all duration-300 rounded-full ios-button"
           onClick={(e) => { e.stopPropagation(); onAssign?.(person); }}
         >
           {!isAssigned ? 'Assign Room' : 'Reassign'}

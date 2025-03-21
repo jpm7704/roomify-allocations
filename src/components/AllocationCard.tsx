@@ -7,7 +7,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Room } from './RoomCard';
 import { Person } from './PersonCard';
-import { format } from 'date-fns';
 
 export interface Allocation {
   id: string;
@@ -46,7 +45,8 @@ const AllocationCard = ({ allocation, onRemove, onClick }: AllocationCardProps) 
   return (
     <Card 
       className={cn(
-        "overflow-hidden border transition-all duration-300 item-transition",
+        "overflow-hidden transition-all duration-300 item-transition",
+        "bg-card/60 backdrop-blur-md border-border/30 shadow-sm",
         "hover:shadow-md hover:border-primary/20 group",
         isHovered && "ring-1 ring-primary/20"
       )}
@@ -94,7 +94,7 @@ const AllocationCard = ({ allocation, onRemove, onClick }: AllocationCardProps) 
         </div>
         
         {allocation.notes && (
-          <div className="mb-4 p-2 bg-muted/30 rounded-md text-sm flex items-start">
+          <div className="mb-4 p-3 bg-muted/30 backdrop-blur-sm rounded-xl text-sm flex items-start">
             <FileText className="h-4 w-4 mt-0.5 mr-2 text-muted-foreground" />
             <p className="text-muted-foreground">{allocation.notes}</p>
           </div>
@@ -111,7 +111,7 @@ const AllocationCard = ({ allocation, onRemove, onClick }: AllocationCardProps) 
           <Button
             size="sm"
             variant="ghost"
-            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full"
             onClick={(e) => { e.stopPropagation(); onRemove?.(allocation.id); }}
           >
             <Trash2 className="h-4 w-4 mr-2" />

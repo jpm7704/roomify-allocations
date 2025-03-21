@@ -122,7 +122,15 @@
 
 @layer components {
   .glass {
-    @apply bg-background/60 backdrop-blur-md border border-border/50;
+    @apply bg-background/60 backdrop-blur-xl border border-border/30 shadow-sm;
+  }
+  
+  .ios-card {
+    @apply rounded-2xl glass;
+  }
+  
+  .ios-button {
+    @apply rounded-full px-5 font-medium;
   }
   
   .glass-hover {
@@ -159,5 +167,26 @@
   
   .item-transition {
     @apply animate-scale-in;
+  }
+
+  /* iOS Style Designs */
+  .ios-input {
+    @apply rounded-xl border-0 bg-muted/50 backdrop-blur-sm focus-visible:ring-1 focus-visible:ring-primary/50;
+  }
+  
+  .ios-nav {
+    @apply glass rounded-full px-1 py-1 border border-border/50;
+  }
+  
+  .ios-badge {
+    @apply rounded-full px-3 py-0.5 text-xs font-medium;
+  }
+  
+  .ios-shadow {
+    @apply shadow-[0_8px_30px_rgb(0,0,0,0.04)];
+  }
+  
+  .ios-tab {
+    @apply rounded-full transition-all duration-200;
   }
 }

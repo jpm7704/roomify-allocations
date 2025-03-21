@@ -40,7 +40,8 @@ const RoomCard = ({
   return (
     <Card 
       className={cn(
-        "overflow-hidden border transition-all duration-300 item-transition",
+        "overflow-hidden transition-all duration-300 item-transition",
+        "bg-card/60 backdrop-blur-md border-border/30 shadow-sm",
         "hover:shadow-md hover:border-primary/20 group",
         isHovered && "ring-1 ring-primary/20"
       )}
@@ -62,11 +63,11 @@ const RoomCard = ({
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={(e) => e.stopPropagation()}>
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="ios-card">
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit?.(room); }}>
               <Pencil className="mr-2 h-4 w-4" />
               <span>Edit</span>
@@ -108,15 +109,15 @@ const RoomCard = ({
             <span>Occupancy</span>
             <span>{occupancyPercentage}%</span>
           </div>
-          <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-muted/50 rounded-full h-2 overflow-hidden backdrop-blur-sm">
             <div 
               className={cn(
                 "h-full rounded-full transition-all duration-500",
                 occupancyPercentage === 100 
-                  ? "bg-destructive" 
+                  ? "bg-destructive/90" 
                   : occupancyPercentage > 75 
-                    ? "bg-amber-500"
-                    : "bg-primary"
+                    ? "bg-amber-500/90"
+                    : "bg-primary/90"
               )}
               style={{ width: `${occupancyPercentage}%` }}
             />
@@ -125,14 +126,14 @@ const RoomCard = ({
       </CardContent>
       
       <CardFooter className="p-6 pt-0 flex items-center justify-between">
-        <Badge variant={isAvailable ? "outline" : "secondary"}>
+        <Badge variant={isAvailable ? "outline" : "secondary"} className="ios-badge">
           {isAvailable ? 'Available' : 'Full'}
         </Badge>
         
         <Button 
           size="sm" 
           variant={isAvailable ? "default" : "outline"}
-          className="transition-all duration-300 rounded-md"
+          className="transition-all duration-300 rounded-full ios-button"
           disabled={!isAvailable}
           onClick={(e) => { 
             e.stopPropagation(); 
