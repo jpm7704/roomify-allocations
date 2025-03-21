@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building, ChevronRight, UserCircle, Lock, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,14 +11,6 @@ const Onboarding = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
   const [selectedIndustry, setSelectedIndustry] = useState<Industry | null>(null);
-
-  // Check if onboarding has been completed before
-  useEffect(() => {
-    const onboardingCompleted = localStorage.getItem('onboardingCompleted');
-    if (onboardingCompleted === 'true') {
-      navigate('/app');
-    }
-  }, [navigate]);
 
   const handleIndustrySelect = (industry: Industry) => {
     setSelectedIndustry(industry);

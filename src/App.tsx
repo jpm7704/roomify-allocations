@@ -47,6 +47,12 @@ const App = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Clear onboarding status for testing - remove in production
+  useEffect(() => {
+    // Remove this in production - this is just to ensure onboarding always shows for testing
+    localStorage.removeItem('onboardingCompleted');
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -74,14 +80,10 @@ const App = () => {
             <Route path="/people" element={<People />} />
             <Route path="/allocations" element={<Allocations />} />
             
-            {/* Redirect root to onboarding if not completed, otherwise to app */}
+            {/* For testing purposes, always redirect to onboarding */}
             <Route 
               path="/" 
-              element={
-                hasCompletedOnboarding ? 
-                <Navigate to="/app" replace /> : 
-                <Navigate to="/onboarding" replace />
-              } 
+              element={<Navigate to="/onboarding" replace />}
             />
             
             {/* Fallback route */}
