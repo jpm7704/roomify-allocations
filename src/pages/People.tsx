@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { UserPlus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import AttendeeForm from '@/components/AttendeeForm';
 import AttendeeTabs from '@/components/AttendeeTabs';
+import { useNavigate } from 'react-router-dom';
 
 const People = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -18,20 +18,18 @@ const People = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPerson, setCurrentPerson] = useState<Person | undefined>(undefined);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
+  const navigate = useNavigate();
   
-  // Fetch data from Supabase
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch people
         const { data: peopleData, error: peopleError } = await supabase
           .from('women_attendees')
           .select('*');
 
         if (peopleError) throw peopleError;
 
-        // Fetch allocations to get roomId and roomName
         const { data: allocationsData, error: allocationsError } = await supabase
           .from('room_allocations')
           .select(`
@@ -41,9 +39,7 @@ const People = () => {
 
         if (allocationsError) throw allocationsError;
 
-        // Transform data to match component props
         const formattedPeople: Person[] = peopleData.map(person => {
-          // Find allocation for this person
           const allocation = allocationsData.find(a => a.person_id === person.id);
           
           return {
@@ -68,7 +64,6 @@ const People = () => {
     fetchData();
   }, []);
   
-  // Filter people based on search query and active tab
   const filteredPeople = people.filter(person => {
     const matchesSearch = 
       person.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -107,7 +102,6 @@ const People = () => {
 
       if (error) throw error;
 
-      // Update local state
       setPeople(people.filter(p => p.id !== personId));
       toast.success(`Person deleted successfully`);
     } catch (error) {
@@ -117,9 +111,7 @@ const People = () => {
   };
   
   const handleAssignPerson = (person: Person) => {
-    // Navigate to allocations page
-    window.location.href = `/allocations`;
-    toast.info(`Navigate to allocations to assign ${person.name} to a room`);
+    navigate('/allocations');
   };
   
   const handlePersonClick = (person: Person) => {
