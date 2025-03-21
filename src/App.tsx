@@ -62,10 +62,13 @@ const App = () => {
             <Route path="/register" element={<Register />} />
 
             {/* App routes - can be accessed without auth for now */}
-            <Route path="/" element={<Index />} />
+            <Route path="/app" element={<Index />} />
             <Route path="/rooms" element={<Rooms />} />
             <Route path="/people" element={<People />} />
             <Route path="/allocations" element={<Allocations />} />
+            
+            {/* Redirect root to onboarding */}
+            <Route path="/" element={<Navigate to="/onboarding" replace />} />
             
             {/* Fallback route */}
             <Route path="*" element={<NotFound />} />

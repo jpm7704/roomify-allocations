@@ -39,7 +39,7 @@ const Layout = ({ children }: LayoutProps) => {
   };
   
   const navItems = [
-    { to: '/', icon: <Home className="w-5 h-5" />, label: 'Home' },
+    { to: '/app', icon: <Home className="w-5 h-5" />, label: 'Home' },
     { to: '/rooms', icon: <Building className="w-5 h-5" />, label: 'Rooms' },
     { to: '/people', icon: <UserRound className="w-5 h-5" />, label: 'People' },
     { to: '/allocations', icon: <Users className="w-5 h-5" />, label: 'Allocations' },
