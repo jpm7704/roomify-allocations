@@ -8,7 +8,7 @@ import {
   DialogDescription
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Bed, Building, Users, MapPin, Info } from 'lucide-react';
+import { Bed, Building, Users, MapPin, Info, Hotel, Home, Tent } from 'lucide-react';
 import { Room } from '@/components/RoomCard';
 import { Badge } from '@/components/ui/badge';
 
@@ -30,6 +30,19 @@ const RoomDetailsDialog = ({
   const occupancyPercentage = Math.round((room.occupied / room.capacity) * 100);
   const isAvailable = room.occupied < room.capacity;
 
+  const getRoomTypeIcon = (type?: string) => {
+    switch (type?.toLowerCase()) {
+      case 'hotel':
+        return <Hotel className="h-4 w-4" />;
+      case 'chalet':
+        return <Home className="h-4 w-4" />;
+      case 'personal tent':
+        return <Tent className="h-4 w-4" />;
+      default:
+        return <Bed className="h-4 w-4" />;
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -43,6 +56,13 @@ const RoomDetailsDialog = ({
         </DialogHeader>
         
         <div className="space-y-4 py-4">
+          {room.type && (
+            <Badge variant="outline" className="mb-2">
+              {getRoomTypeIcon(room.type)}
+              <span className="ml-1">{room.type}</span>
+            </Badge>
+          )}
+          
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm">
               <Bed className="h-4 w-4 text-muted-foreground" />

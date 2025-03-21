@@ -17,10 +17,10 @@ const CallToAction = () => {
           <Button 
             size="lg" 
             className="rounded-md animate-pulse hover:animate-none"
-            onClick={() => navigate('/rooms')}
+            onClick={() => navigate('/allocations')}
           >
             <Building className="mr-2 h-5 w-5" />
-            Manage Rooms
+            Manage Allocations
           </Button>
         </div>
       </div>

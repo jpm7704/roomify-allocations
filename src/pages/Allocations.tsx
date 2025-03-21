@@ -76,7 +76,7 @@ const Allocations = () => {
             person_id,
             room_id,
             women_attendees!inner(id, name, email, phone, department, home_church),
-            accommodation_rooms!inner(id, name, capacity, occupied, floor, building)
+            accommodation_rooms!inner(id, name, capacity, occupied, floor, building, type)
           `);
 
         if (allocationsError && allocationsError.code !== 'PGRST116') throw allocationsError;
@@ -88,7 +88,8 @@ const Allocations = () => {
           occupied: room.occupied || 0,
           floor: room.floor,
           building: room.building,
-          description: room.description
+          description: room.description,
+          type: room.type || 'Hotel'
         })) || [];
 
         const formattedPeople: Person[] = peopleData?.map(person => {
@@ -119,7 +120,8 @@ const Allocations = () => {
             capacity: allocation.accommodation_rooms.capacity,
             occupied: allocation.accommodation_rooms.occupied || 0,
             floor: allocation.accommodation_rooms.floor,
-            building: allocation.accommodation_rooms.building
+            building: allocation.accommodation_rooms.building,
+            type: allocation.accommodation_rooms.type || 'Hotel'
           };
 
           return {
@@ -286,6 +288,7 @@ const Allocations = () => {
           building: values.building || 'Main Building',
           floor: values.floor || '1',
           description: values.description,
+          type: values.type || 'Hotel',
           occupied: 0
         })
         .select();
@@ -300,7 +303,8 @@ const Allocations = () => {
           occupied: 0,
           floor: data[0].floor || '1',
           building: data[0].building || 'Main Building',
-          description: data[0].description
+          description: data[0].description,
+          type: data[0].type || 'Hotel'
         };
 
         setRooms([...rooms, newRoom]);
@@ -378,7 +382,7 @@ const Allocations = () => {
             person_id,
             room_id,
             women_attendees!inner(id, name, email, phone, department, home_church),
-            accommodation_rooms!inner(id, name, capacity, occupied, floor, building)
+            accommodation_rooms!inner(id, name, capacity, occupied, floor, building, type)
           `);
 
         if (refreshError) throw refreshError;
@@ -395,7 +399,8 @@ const Allocations = () => {
             occupied: room.occupied || 0,
             floor: room.floor,
             building: room.building,
-            description: room.description
+            description: room.description,
+            type: room.type || 'Hotel'
           })) || [];
 
           const updatedFormattedAllocations: Allocation[] = freshData.map((allocation: any) => {
@@ -414,7 +419,8 @@ const Allocations = () => {
               capacity: allocation.accommodation_rooms.capacity,
               occupied: allocation.accommodation_rooms.occupied || 0,
               floor: allocation.accommodation_rooms.floor,
-              building: allocation.accommodation_rooms.building
+              building: allocation.accommodation_rooms.building,
+              type: allocation.accommodation_rooms.type || 'Hotel'
             };
 
             return {
@@ -527,7 +533,8 @@ const Allocations = () => {
           capacity: selectedRoom.capacity,
           occupied: selectedRoom.occupied + 1,
           floor: selectedRoom.floor,
-          building: selectedRoom.building
+          building: selectedRoom.building,
+          type: selectedRoom.type || 'Hotel'
         }
       };
 

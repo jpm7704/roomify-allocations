@@ -9,7 +9,6 @@ import { supabase } from "./integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 
 import Index from "./pages/Index";
-import Rooms from "./pages/Rooms";
 import People from "./pages/People";
 import Allocations from "./pages/Allocations";
 import NotFound from "./pages/NotFound";
@@ -63,7 +62,6 @@ const App = () => {
 
             {/* App routes - can be accessed without auth for now */}
             <Route path="/" element={<Index />} />
-            <Route path="/rooms" element={<Rooms />} />
             <Route path="/people" element={<People />} />
             <Route path="/allocations" element={<Allocations />} />
             

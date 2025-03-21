@@ -12,6 +12,7 @@ interface RoomFormValues {
   building: string;
   floor: string;
   description: string;
+  type: string;
 }
 
 interface RoomFormDialogProps {
@@ -34,6 +35,7 @@ const RoomFormDialog = ({
       building: 'Main Building',
       floor: '1',
       description: '',
+      type: 'Hotel',
     },
   });
 
@@ -54,6 +56,32 @@ const RoomFormDialog = ({
         
         <Form {...roomForm}>
           <div className="grid gap-4 py-4">
+            <FormField
+              control={roomForm.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Room Type*</FormLabel>
+                  <FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select room type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Hotel">Hotel</SelectItem>
+                        <SelectItem value="Chalet">Chalet</SelectItem>
+                        <SelectItem value="Personal Tent">Personal Tent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
             <FormField
               control={roomForm.control}
               name="name"
