@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Person } from '@/components/PersonCard';
 import { Room } from '@/components/RoomCard';
@@ -8,6 +7,8 @@ import AllocationFormDialog from '@/components/AllocationFormDialog';
 import RoomFormDialog from '@/components/RoomFormDialog';
 import AllocationDetailsDialog from '@/components/AllocationDetailsDialog';
 import { useForm } from 'react-hook-form';
+import { useAllocationDialog } from '@/contexts/AllocationDialogContext';
+import { useEffect } from 'react';
 
 interface AllocationDialogManagerProps {
   people: Person[];
@@ -35,14 +36,24 @@ const AllocationDialogManager = ({
   onEditAllocation
 }: AllocationDialogManagerProps) => {
   const navigate = useNavigate();
-  const [isDialogOpen, setIsDialogOpen] = useState(!!roomIdFromUrl);
-  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-  const [selectedPeople, setSelectedPeople] = useState<Person[]>([]);
-  const [multiSelectMode, setMultiSelectMode] = useState(false);
-  const [viewedAllocation, setViewedAllocation] = useState<Allocation | null>(null);
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
+  
+  const { 
+    isAllocationDialogOpen, 
+    closeAllocationDialog,
+    isRoomDialogOpen,
+    closeRoomDialog,
+    isDetailsDialogOpen,
+    setIsDetailsDialogOpen,
+    selectedPerson,
+    setSelectedPerson,
+    selectedRoom,
+    setSelectedRoom,
+    selectedPeople,
+    setSelectedPeople,
+    viewedAllocation,
+    multiSelectMode,
+    setMultiSelectMode
+  } = useAllocationDialog();
 
   const form = useForm({
     defaultValues: {
@@ -50,35 +61,23 @@ const AllocationDialogManager = ({
     },
   });
 
-  const handleCreateAllocation = () => {
-    setSelectedPerson(null);
-    setSelectedRoom(null);
-    setSelectedPeople([]);
-    form.reset({ notes: '' });
-    
-    const hasMultiCapacityRooms = rooms.some(room => room.capacity > 1 && room.occupied < room.capacity);
-    setMultiSelectMode(hasMultiCapacityRooms);
-    
-    setIsDialogOpen(true);
-  };
-
-  const handleAllocationClick = (allocation: Allocation) => {
-    setViewedAllocation(allocation);
-    setIsDetailsDialogOpen(true);
-  };
-
-  const handleEditAllocation = (allocation: Allocation) => {
-    if (onEditAllocation) {
-      onEditAllocation(allocation);
-    } else {
-      setSelectedPerson(allocation.person);
-      setSelectedRoom(allocation.room);
-      setSelectedPeople([]);
-      form.reset({ notes: allocation.notes || '' });
-      setMultiSelectMode(false);
-      setIsDialogOpen(true);
+  // Handle URL room ID on initial load
+  useEffect(() => {
+    if (roomIdFromUrl && rooms.length > 0) {
+      const roomToSelect = rooms.find(room => room.id === roomIdFromUrl);
+      if (roomToSelect) {
+        setSelectedRoom(roomToSelect);
+        
+        // Set multi-select mode if room has enough capacity
+        if (roomToSelect.capacity > 1 && roomToSelect.capacity - roomToSelect.occupied > 1) {
+          setMultiSelectMode(true);
+        }
+        
+        // Open allocation dialog with pre-selected room
+        closeAllocationDialog();
+      }
     }
-  };
+  }, [roomIdFromUrl, rooms, setSelectedRoom, setMultiSelectMode, closeAllocationDialog]);
 
   const handlePersonSelect = (person: Person) => {
     setSelectedPerson(person);
@@ -103,19 +102,12 @@ const AllocationDialogManager = ({
     }
   };
 
-  const handleCreateRoom = () => {
-    setIsRoomDialogOpen(true);
-  };
-
-  const handleCancelRoomDialog = () => {
-    setIsRoomDialogOpen(false);
-  };
-
   const handleSaveRoom = async (values: any) => {
     const success = await onCreateRoom(values);
     if (success) {
-      setIsRoomDialogOpen(false);
+      closeRoomDialog();
     }
+    return success;
   };
 
   const handleSaveAllocation = async () => {
@@ -128,25 +120,37 @@ const AllocationDialogManager = ({
     );
     
     if (success) {
-      setIsDialogOpen(false);
-      setSelectedPeople([]);
+      closeAllocationDialog();
     }
+    
+    return success;
   };
 
   const handleCancelAllocationDialog = () => {
-    setIsDialogOpen(false);
-    setSelectedPeople([]);
+    closeAllocationDialog();
     
     if (roomIdFromUrl) {
       navigate('/allocations');
     }
   };
 
+  const handleEditAllocation = (allocation: Allocation) => {
+    if (onEditAllocation) {
+      onEditAllocation(allocation);
+    } else {
+      setSelectedPerson(allocation.person);
+      setSelectedRoom(allocation.room);
+      setSelectedPeople([]);
+      form.reset({ notes: allocation.notes || '' });
+      setMultiSelectMode(false);
+    }
+  };
+
   return (
     <>
       <AllocationFormDialog
-        isOpen={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        isOpen={isAllocationDialogOpen}
+        onOpenChange={closeAllocationDialog}
         people={people.filter(p => 
           multiSelectMode 
             ? (!p.roomId || (selectedRoom && p.roomId === selectedRoom.id))
@@ -159,7 +163,7 @@ const AllocationDialogManager = ({
         onRoomSelect={handleRoomSelect}
         onSave={handleSaveAllocation}
         onCancel={handleCancelAllocationDialog}
-        onCreateRoom={handleCreateRoom}
+        onCreateRoom={closeRoomDialog}
         selectedPeople={selectedPeople}
         onMultiPersonSelect={handleMultiPersonSelect}
         multiSelectMode={multiSelectMode}
@@ -167,9 +171,9 @@ const AllocationDialogManager = ({
 
       <RoomFormDialog
         isOpen={isRoomDialogOpen}
-        onOpenChange={setIsRoomDialogOpen}
+        onOpenChange={closeRoomDialog}
         onSave={handleSaveRoom}
-        onCancel={handleCancelRoomDialog}
+        onCancel={closeRoomDialog}
       />
 
       <AllocationDetailsDialog
@@ -179,12 +183,6 @@ const AllocationDialogManager = ({
         onDelete={onRemoveAllocation}
         onEdit={handleEditAllocation}
       />
-
-      {/* Return functions to be used by parent component */}
-      {/* We don't return any visible JSX, just provide methods */}
-      <span className="hidden">
-        {/* This span is never displayed, just used to expose the methods */}
-      </span>
     </>
   );
 };

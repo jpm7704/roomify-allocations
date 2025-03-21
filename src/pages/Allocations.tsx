@@ -7,9 +7,11 @@ import AllocationHeader from '@/components/allocation/AllocationHeader';
 import AllocationSearch from '@/components/allocation/AllocationSearch';
 import AllocationsList from '@/components/AllocationsList';
 import { AllocationDialogManager } from '@/components/allocation/AllocationDialogManager';
+import { AllocationDialogProvider, useAllocationDialog } from '@/contexts/AllocationDialogContext';
 import { Allocation } from '@/components/AllocationCard';
 
-const Allocations = () => {
+// Inner component that uses the context
+const AllocationsContent = () => {
   const [searchParams] = useSearchParams();
   const roomIdFromUrl = searchParams.get('roomId');
   
@@ -26,6 +28,12 @@ const Allocations = () => {
     saveAllocation 
   } = useAllocations(roomIdFromUrl);
 
+  const {
+    openAllocationDialog,
+    openRoomDialog,
+    openAllocationDetails
+  } = useAllocationDialog();
+
   const filteredAllocations = filterAllocations(searchQuery);
 
   const handleSearchChange = (value: string) => {
@@ -40,8 +48,8 @@ const Allocations = () => {
     <Layout>
       <div className="page-container">
         <AllocationHeader 
-          onCreateAllocation={handleCreateAllocation} 
-          onCreateRoom={handleCreateRoom}
+          onCreateAllocation={openAllocationDialog} 
+          onCreateRoom={openRoomDialog}
         />
         
         <AllocationSearch 
@@ -54,10 +62,10 @@ const Allocations = () => {
             loading={loading}
             allocations={filteredAllocations}
             searchQuery={searchQuery}
-            onRemove={handleRemoveAllocation}
-            onClick={handleAllocationClick}
-            onCreateRoom={handleCreateRoom}
-            onCreateAllocation={searchQuery ? handleClearSearch : handleCreateAllocation}
+            onRemove={removeAllocation}
+            onClick={openAllocationDetails}
+            onCreateRoom={openRoomDialog}
+            onCreateAllocation={searchQuery ? handleClearSearch : openAllocationDialog}
             hasRooms={rooms.length > 0}
           />
         </div>
@@ -73,26 +81,15 @@ const Allocations = () => {
       </div>
     </Layout>
   );
+};
 
-  // Handlers to pass to the dialog manager
-  function handleCreateRoom() {
-    // Access through the ref to avoid re-renders
-    document.dispatchEvent(new CustomEvent('open-room-dialog'));
-  }
-
-  function handleCreateAllocation() {
-    document.dispatchEvent(new CustomEvent('open-allocation-dialog'));
-  }
-
-  function handleAllocationClick(allocation: Allocation) {
-    document.dispatchEvent(new CustomEvent('open-allocation-details', { 
-      detail: { allocation } 
-    }));
-  }
-
-  function handleRemoveAllocation(allocationId: string) {
-    removeAllocation(allocationId);
-  }
+// Main component that provides the context
+const Allocations = () => {
+  return (
+    <AllocationDialogProvider>
+      <AllocationsContent />
+    </AllocationDialogProvider>
+  );
 };
 
 export default Allocations;
