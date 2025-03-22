@@ -36,7 +36,10 @@ const SMSNotificationDialog = ({
   
   const form = useForm<SMSFormData>({
     defaultValues: {
-      recipients: preselectedRecipients.map(p => p.phone || '').filter(Boolean).join(','),
+      recipients: preselectedRecipients
+        .map(p => p.phone || '')
+        .filter(Boolean)
+        .join(','),
       message: `Dear attendee, this is a notification about ${eventName}. `
     }
   });

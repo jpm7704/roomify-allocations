@@ -13,6 +13,7 @@ export interface Person {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   avatar?: string;
   department?: string;
   roomId?: string;
