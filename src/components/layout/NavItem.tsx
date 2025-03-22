@@ -33,7 +33,7 @@ const NavItem = ({ to, icon, label, active, collapsed, onClick }: NavItemProps) 
               <span className="transition-all duration-500 ease-in-out font-medium whitespace-nowrap overflow-hidden">{label}</span>
             )}
             {active && (
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-full" />
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-primary rounded-full" />
             )}
           </Link>
         </TooltipTrigger>
