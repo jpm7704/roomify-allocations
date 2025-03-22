@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import * as XLSX from "https://esm.sh/xlsx@0.18.5";
@@ -45,6 +46,9 @@ serve(async (req) => {
       const formData = await req.formData();
       userProvidedApiKey = formData.get('apiKey')?.toString() || null;
       const file = formData.get('file');
+      const useAI = formData.get('useAI')?.toString().toLowerCase() === 'true';
+      
+      console.log(`Processing file with AI: ${useAI}`);
       
       if (!file || !(file instanceof File)) {
         return new Response(
@@ -90,8 +94,22 @@ serve(async (req) => {
         );
       }
 
-      // Process data with Mistral AI, using user-provided API key if available
-      const processedData = await processWithMistralAI(rawData, userProvidedApiKey);
+      // Process data - with or without AI based on the flag
+      let processedData;
+      if (useAI) {
+        processedData = await processWithMistralAI(rawData, userProvidedApiKey);
+      } else {
+        // Process without AI - use the basic extraction logic
+        processedData = rawData.map(row => ({
+          name: extractFieldValue(row, ['name', 'Name', 'full name', 'Full Name']),
+          email: extractFieldValue(row, ['email', 'Email', 'email address', 'Email Address'])?.toLowerCase(),
+          phone: extractFieldValue(row, ['phone', 'Phone', 'phone number', 'Phone Number', 'contact', 'Contact']),
+          department: extractFieldValue(row, ['department', 'Department', 'dept', 'Dept']),
+          home_church: extractFieldValue(row, ['church', 'Church', 'home church', 'Home Church']),
+          special_needs: extractFieldValue(row, ['special needs', 'Special Needs', 'requirements', 'Requirements'])
+        }));
+      }
+      
       let successCount = 0;
       let failureCount = 0;
 
@@ -237,7 +255,7 @@ async function handleTestConnection(userProvidedApiKey = null) {
   }
 }
 
-function updateImportStatus(supabase, importId, status, errorMessage = null, processed = 0, failed = 0) {
+async function updateImportStatus(supabase, importId, status, errorMessage = null, processed = 0, failed = 0) {
   const updateData = {
     status,
     completed_at: new Date().toISOString(),

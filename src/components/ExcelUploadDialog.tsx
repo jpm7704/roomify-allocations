@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, FileUpIcon, AlertTriangle, WifiIcon, KeyIcon } from 'lucide-react';
+import { Upload, FileUpIcon, AlertTriangle, WifiIcon, KeyIcon, BrainCircuit } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 
 interface ExcelUploadDialogProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
   const [status, setStatus] = useState<'idle' | 'uploading' | 'processing' | 'success' | 'error' | 'testing'>('idle');
   const [apiKey, setApiKey] = useState('');
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const [useAI, setUseAI] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -52,15 +54,20 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
       const formData = new FormData();
       formData.append('file', file);
       
-      // If manual API key is provided, add it to the request
+      // Add optional settings
       if (apiKey.trim()) {
         formData.append('apiKey', apiKey.trim());
       }
       
+      // Add flag to control AI processing
+      formData.append('useAI', useAI.toString());
+      
       setProgress(30);
       setStatus('processing');
       
-      toast.info('Processing with Mistral AI, this may take a few moments...');
+      toast.info(useAI 
+        ? 'Processing with AI, this may take a few moments...' 
+        : 'Processing your Excel file...');
       
       const result = await supabase.functions.invoke('process-excel', {
         body: formData,
@@ -100,6 +107,7 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
     setStatus('idle');
     setUploading(false);
     setShowApiKeyInput(false);
+    setUseAI(false);
   };
 
   const testConnection = async () => {
@@ -124,16 +132,19 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
       
       if (testResult.data?.success) {
         toast.success('Successfully connected to Mistral AI API!');
+        setUseAI(true);
       } else {
         toast.error(`Connection test failed: ${testResult.data?.message || 'Unknown error'}`);
         // If connection failed, show the API key input
         setShowApiKeyInput(true);
+        setUseAI(false);
       }
     } catch (error) {
       console.error('Error testing connection:', error);
       toast.error(`Connection test failed: ${error.message}`);
       // If connection failed, show the API key input
       setShowApiKeyInput(true);
+      setUseAI(false);
     } finally {
       setStatus('idle');
     }
@@ -145,7 +156,7 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
         <DialogHeader>
           <DialogTitle>Import Attendees from Excel</DialogTitle>
           <DialogDescription>
-            Upload an Excel file containing attendee data. Our AI will process and organize it for you.
+            Upload an Excel file containing attendee data. We'll process it and organize it for you.
           </DialogDescription>
         </DialogHeader>
         
@@ -169,7 +180,35 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
             )}
           </div>
 
-          {showApiKeyInput && (
+          <div className="flex items-center justify-between space-x-2">
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="use-ai" 
+                checked={useAI} 
+                onCheckedChange={setUseAI}
+                disabled={uploading || status === 'testing'}
+              />
+              <Label htmlFor="use-ai" className="cursor-pointer flex items-center">
+                <BrainCircuit className="h-4 w-4 mr-1" />
+                Enable AI Processing
+              </Label>
+            </div>
+            
+            {useAI && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={testConnection}
+                disabled={uploading || status === 'testing'}
+              >
+                <WifiIcon className="mr-2 h-4 w-4" />
+                Test AI Connection
+              </Button>
+            )}
+          </div>
+
+          {useAI && showApiKeyInput && (
             <div className="grid w-full gap-1.5">
               <Label htmlFor="apiKey">Mistral AI API Key</Label>
               <div className="flex items-center gap-2">
@@ -205,7 +244,7 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm font-medium">
-                  {status === 'uploading' ? 'Uploading file...' : 'Processing with AI...'}
+                  {status === 'uploading' ? 'Uploading file...' : useAI ? 'Processing with AI...' : 'Processing file...'}
                 </span>
                 <span className="text-sm text-muted-foreground">{progress}%</span>
               </div>
@@ -220,55 +259,31 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
             </div>
           )}
 
-          <div className="flex justify-between gap-2">
-            <div className="flex gap-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={testConnection}
-                disabled={uploading || status === 'testing'}
-              >
-                <WifiIcon className="mr-2 h-4 w-4" />
-                Test Connection
-              </Button>
-              
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-                disabled={uploading || status === 'testing'}
-              >
-                <KeyIcon className="mr-2 h-4 w-4" />
-                {showApiKeyInput ? 'Hide API Key' : 'Enter API Key'}
-              </Button>
-            </div>
-            
-            <div className="flex gap-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => onOpenChange(false)}
-                disabled={uploading || status === 'testing'}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={!file || uploading || status === 'testing'}
-              >
-                {uploading ? (
-                  <>
-                    <FileUpIcon className="mr-2 h-4 w-4 animate-pulse" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload & Process
-                  </>
-                )}
-              </Button>
-            </div>
+          <div className="flex justify-end gap-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={uploading || status === 'testing'}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={!file || uploading || status === 'testing'}
+            >
+              {uploading ? (
+                <>
+                  <FileUpIcon className="mr-2 h-4 w-4 animate-pulse" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload & Process
+                </>
+              )}
+            </Button>
           </div>
         </form>
       </DialogContent>
