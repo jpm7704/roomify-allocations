@@ -35,7 +35,7 @@ const Sidebar = ({ navOpen, toggleNav, theme, toggleTheme, navItems }: SidebarPr
                 <img 
                   src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
                   alt="Roomify Logo" 
-                  className={`w-8 h-8 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
+                  className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
                 />
               </div>
               <span className="text-foreground">Roomify</span>
@@ -45,7 +45,7 @@ const Sidebar = ({ navOpen, toggleNav, theme, toggleTheme, navItems }: SidebarPr
               <img 
                 src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
                 alt="Roomify Logo" 
-                className={`w-8 h-8 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
+                className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
               />
             </div>
           )}

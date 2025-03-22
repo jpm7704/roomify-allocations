@@ -25,11 +25,11 @@ const MobileHeader = ({ openMobileMenu, theme, toggleTheme }: MobileHeaderProps)
         </div>
       </Button>
       <div className="flex items-center gap-2">
-        <div className={`flex items-center justify-center rounded-full w-9 h-9 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
+        <div className={`flex items-center justify-center rounded-full w-10 h-10 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
           <img 
             src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
             alt="Roomify Logo" 
-            className={`w-8 h-8 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
+            className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
           />
         </div>
         <h2 className="font-bold text-xl">Roomify</h2>

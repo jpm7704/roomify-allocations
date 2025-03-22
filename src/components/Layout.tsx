@@ -44,28 +44,30 @@ const Layout = ({ children }: LayoutProps) => {
   };
   
   const navItems = [
-    { to: '/', icon: <div className={`flex items-center justify-center rounded-full w-8 h-8 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
+    { to: '/', icon: <div className={`flex items-center justify-center rounded-full w-10 h-10 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
       <img 
         src="/lovable-uploads/d33adaab-fb15-4c72-942c-bfeeb00ae13f.png" 
         alt="Home" 
-        className={`w-6 h-6 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
+        className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
       />
     </div>, label: 'Home' },
-    { to: '/rooms', icon: <div className={`flex items-center justify-center rounded-full w-8 h-8 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
+    { to: '/rooms', icon: <div className={`flex items-center justify-center rounded-full w-10 h-10 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
       <img 
         src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
         alt="Rooms" 
-        className={`w-6 h-6 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`} 
+        className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`} 
       />
     </div>, label: 'Rooms' },
-    { to: '/people', icon: <div className={`flex items-center justify-center rounded-full w-8 h-8 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
+    { to: '/people', icon: <div className={`flex items-center justify-center rounded-full w-10 h-10 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
       <img 
         src="/lovable-uploads/836f0a81-66af-413a-a8fc-fc8bb7b27059.png" 
         alt="People" 
-        className={`w-6 h-6 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
+        className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
       />
     </div>, label: 'People' },
-    { to: '/allocations', icon: <Users className="w-7 h-7" />, label: 'Allocations' },
+    { to: '/allocations', icon: <div className={`flex items-center justify-center rounded-full w-10 h-10 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
+      <Users className="w-7 h-7" />
+    </div>, label: 'Allocations' },
   ];
 
   return (
@@ -85,7 +87,7 @@ const Layout = ({ children }: LayoutProps) => {
           <DrawerContent className="h-[85vh] rounded-t-[24px] px-0 pb-0 pt-4">
             <div className="flex justify-between items-center px-4 mb-2">
               <div className="font-bold text-xl flex items-center gap-3">
-                <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
                   <img 
                     src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
                     alt="Roomify Logo" 
@@ -110,9 +112,7 @@ const Layout = ({ children }: LayoutProps) => {
                     className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-colors"
                     onClick={() => setIsMobileDrawerOpen(false)}
                   >
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      {item.icon}
-                    </div>
+                    {item.icon}
                     <span className="font-medium">{item.label}</span>
                   </a>
                 ))}
