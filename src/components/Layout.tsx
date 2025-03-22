@@ -45,11 +45,13 @@ const Layout = ({ children }: LayoutProps) => {
   
   const navItems = [
     { to: '/', icon: <Home className="w-5 h-5" />, label: 'Home' },
-    { to: '/rooms', icon: <img 
-      src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
-      alt="Rooms" 
-      className={`w-5 h-5 ${theme === 'dark' ? 'brightness-200' : ''}`} 
-    />, label: 'Rooms' },
+    { to: '/rooms', icon: <div className={`flex items-center justify-center rounded-full w-5 h-5 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
+      <img 
+        src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
+        alt="Rooms" 
+        className={`w-4 h-4 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`} 
+      />
+    </div>, label: 'Rooms' },
     { to: '/people', icon: <UserRound className="w-5 h-5" />, label: 'People' },
     { to: '/allocations', icon: <Users className="w-5 h-5" />, label: 'Allocations' },
   ];
@@ -75,7 +77,7 @@ const Layout = ({ children }: LayoutProps) => {
                   <img 
                     src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
                     alt="Roomify Logo" 
-                    className={`w-6 h-6 ${theme === 'dark' ? 'brightness-200' : ''}`}
+                    className={`w-6 h-6 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
                   />
                 </div>
                 <span className="text-foreground">Roomify</span>
