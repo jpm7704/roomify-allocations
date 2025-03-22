@@ -54,6 +54,9 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
       setProgress(30);
       setStatus('processing');
       
+      // Add debug toast to show we're processing
+      toast.info('Processing with Mistral AI, this may take a few moments...');
+      
       const result = await supabase.functions.invoke('process-excel', {
         body: formData,
       });
