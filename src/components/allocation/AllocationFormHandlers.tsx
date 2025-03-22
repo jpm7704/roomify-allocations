@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -5,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Person } from '@/components/PersonCard';
 import { Room } from '@/components/RoomCard';
 import { Allocation } from '@/components/AllocationCard';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useAllocationFormHandlers = (
   rooms: Room[],
@@ -29,6 +31,8 @@ export const useAllocationFormHandlers = (
       notes: '',
     },
   });
+  
+  const { user } = useAuth();
 
   const handlePersonSelect = (person: Person) => {
     setSelectedPerson(person);
@@ -54,6 +58,11 @@ export const useAllocationFormHandlers = (
   };
 
   const handleSaveAllocation = async () => {
+    if (!user) {
+      toast.error("You must be logged in to perform this action");
+      return;
+    }
+    
     if (multiSelectMode && selectedPeople.length > 0 && selectedRoom) {
       try {
         if (selectedPeople.length > (selectedRoom.capacity - selectedRoom.occupied)) {
@@ -76,7 +85,8 @@ export const useAllocationFormHandlers = (
                 notes: notes,
                 date_assigned: new Date().toISOString()
               })
-              .eq('id', existingAllocation.id);
+              .eq('id', existingAllocation.id)
+              .eq('user_id', user.id);
 
             if (error) throw error;
 
@@ -84,7 +94,8 @@ export const useAllocationFormHandlers = (
               await supabase
                 .from('accommodation_rooms')
                 .update({ occupied: existingAllocation.room.occupied - 1 })
-                .eq('id', existingAllocation.roomId);
+                .eq('id', existingAllocation.roomId)
+                .eq('user_id', user.id);
               
               totalUpdatedAllocations++;
             }
@@ -95,7 +106,8 @@ export const useAllocationFormHandlers = (
                 person_id: person.id,
                 room_id: selectedRoom.id,
                 notes: notes,
-                date_assigned: new Date().toISOString()
+                date_assigned: new Date().toISOString(),
+                user_id: user.id
               });
 
             if (error) throw error;
@@ -107,7 +119,8 @@ export const useAllocationFormHandlers = (
         await supabase
           .from('accommodation_rooms')
           .update({ occupied: newOccupancy })
-          .eq('id', selectedRoom.id);
+          .eq('id', selectedRoom.id)
+          .eq('user_id', user.id);
         
         onFetchData();
 
@@ -149,7 +162,8 @@ export const useAllocationFormHandlers = (
           person_id: selectedPerson.id,
           room_id: selectedRoom.id,
           notes: form.getValues().notes,
-          date_assigned: new Date().toISOString()
+          date_assigned: new Date().toISOString(),
+          user_id: user.id
         })
         .select();
 
@@ -158,7 +172,8 @@ export const useAllocationFormHandlers = (
       const { error: roomError } = await supabase
         .from('accommodation_rooms')
         .update({ occupied: selectedRoom.occupied + 1 })
-        .eq('id', selectedRoom.id);
+        .eq('id', selectedRoom.id)
+        .eq('user_id', user.id);
 
       if (roomError) throw roomError;
 
@@ -167,6 +182,7 @@ export const useAllocationFormHandlers = (
         .select('id')
         .eq('person_id', selectedPerson.id)
         .eq('room_id', selectedRoom.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1)
         .single();

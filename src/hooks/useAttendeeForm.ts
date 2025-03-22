@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Person } from '@/components/PersonCard';
 import { AttendeeFormData } from '@/types/attendee';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useAttendeeForm = (
   initialData: Partial<AttendeeFormData & { id?: string }> = {},
@@ -11,6 +12,8 @@ export const useAttendeeForm = (
   onSuccess: (person: Person) => void,
   onComplete: () => void
 ) => {
+  const { user } = useAuth();
+  
   const form = useForm<AttendeeFormData>({
     defaultValues: {
       name: initialData?.name || '',
@@ -23,6 +26,11 @@ export const useAttendeeForm = (
   });
 
   const handleSubmit = async () => {
+    if (!user) {
+      toast.error("You must be logged in to perform this action");
+      return;
+    }
+    
     try {
       const values = form.getValues();
       
@@ -35,7 +43,8 @@ export const useAttendeeForm = (
             phone: values.phone,
             department: values.department,
             home_church: values.homeChurch,
-            special_needs: values.specialNeeds
+            special_needs: values.specialNeeds,
+            user_id: user.id
           })
           .select();
 
@@ -66,6 +75,7 @@ export const useAttendeeForm = (
             special_needs: values.specialNeeds
           })
           .eq('id', initialData.id)
+          .eq('user_id', user.id)
           .select();
 
         if (error) throw error;

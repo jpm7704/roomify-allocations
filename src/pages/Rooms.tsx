@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import RoomFormDialog from '@/components/RoomFormDialog';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Rooms = () => {
   const navigate = useNavigate();
@@ -17,14 +18,22 @@ const Rooms = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
+  const { user } = useAuth();
   
   useEffect(() => {
     const fetchRooms = async () => {
+      if (!user) {
+        setRooms([]);
+        setLoading(false);
+        return;
+      }
+      
       setLoading(true);
       try {
         const { data, error } = await supabase
           .from('accommodation_rooms')
-          .select('*');
+          .select('*')
+          .eq('user_id', user.id);
         
         if (error) throw error;
 
@@ -47,7 +56,7 @@ const Rooms = () => {
     };
 
     fetchRooms();
-  }, []);
+  }, [user]);
   
   const filteredRooms = rooms.filter(room => {
     const matchesSearch = 
@@ -71,6 +80,11 @@ const Rooms = () => {
   };
 
   const handleSaveRoom = async (values: any) => {
+    if (!user) {
+      toast.error("You must be logged in to perform this action");
+      return;
+    }
+    
     try {
       if (!values.name || !values.capacity) {
         toast.error("Room name and capacity are required");
@@ -84,7 +98,8 @@ const Rooms = () => {
           capacity: parseInt(values.capacity),
           description: values.description,
           type: values.type || 'Chalet',
-          occupied: 0
+          occupied: 0,
+          user_id: user.id
         })
         .select();
 
@@ -120,11 +135,17 @@ const Rooms = () => {
   };
   
   const handleDeleteRoom = async (roomId: string) => {
+    if (!user) {
+      toast.error("You must be logged in to perform this action");
+      return;
+    }
+    
     try {
       const { data: allocations, error: checkError } = await supabase
         .from('room_allocations')
         .select('id')
-        .eq('room_id', roomId);
+        .eq('room_id', roomId)
+        .eq('user_id', user.id);
       
       if (checkError) throw checkError;
       
@@ -136,7 +157,8 @@ const Rooms = () => {
       const { error } = await supabase
         .from('accommodation_rooms')
         .delete()
-        .eq('id', roomId);
+        .eq('id', roomId)
+        .eq('user_id', user.id);
         
       if (error) throw error;
       

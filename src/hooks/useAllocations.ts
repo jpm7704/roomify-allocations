@@ -6,6 +6,7 @@ import { Allocation } from '@/components/AllocationCard';
 import { Person } from '@/components/PersonCard';
 import { Room } from '@/components/RoomCard';
 import { RoomWithOccupants } from '@/components/AllocationsList';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useAllocations = (roomIdFromUrl: string | null) => {
   const [allocations, setAllocations] = useState<Allocation[]>([]);
@@ -19,23 +20,35 @@ export const useAllocations = (roomIdFromUrl: string | null) => {
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [viewedAllocation, setViewedAllocation] = useState<Allocation | null>(null);
   const [viewedRoomAllocation, setViewedRoomAllocation] = useState<RoomWithOccupants | null>(null);
+  const { user } = useAuth();
   
   useEffect(() => {
     fetchData();
-  }, [roomIdFromUrl]);
+  }, [roomIdFromUrl, user]);
   
   const fetchData = async () => {
+    if (!user) {
+      setRooms([]);
+      setPeople([]);
+      setAllocations([]);
+      setRoomAllocations([]);
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
       const { data: roomsData, error: roomsError } = await supabase
         .from('accommodation_rooms')
-        .select('*');
+        .select('*')
+        .eq('user_id', user.id);
 
       if (roomsError) throw roomsError;
 
       const { data: peopleData, error: peopleError } = await supabase
         .from('women_attendees')
-        .select('*');
+        .select('*')
+        .eq('user_id', user.id);
 
       if (peopleError) throw peopleError;
 
@@ -49,7 +62,8 @@ export const useAllocations = (roomIdFromUrl: string | null) => {
           room_id,
           women_attendees!inner(id, name, email, phone, department, home_church),
           accommodation_rooms!inner(id, name, capacity, occupied, type)
-        `);
+        `)
+        .eq('user_id', user.id);
 
       if (allocationsError && allocationsError.code !== 'PGRST116') throw allocationsError;
 
@@ -140,6 +154,11 @@ export const useAllocations = (roomIdFromUrl: string | null) => {
   };
 
   const handleRemoveOccupant = async (roomId: string, personId: string) => {
+    if (!user) {
+      toast.error("You must be logged in to perform this action");
+      return;
+    }
+    
     try {
       const allocation = allocations.find(a => a.roomId === roomId && a.personId === personId);
       if (!allocation) {
@@ -150,14 +169,16 @@ export const useAllocations = (roomIdFromUrl: string | null) => {
       const { error } = await supabase
         .from('room_allocations')
         .delete()
-        .eq('id', allocation.id);
+        .eq('id', allocation.id)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
       const { error: roomError } = await supabase
         .from('accommodation_rooms')
         .update({ occupied: allocation.room.occupied - 1 })
-        .eq('id', roomId);
+        .eq('id', roomId)
+        .eq('user_id', user.id);
 
       if (roomError) throw roomError;
 

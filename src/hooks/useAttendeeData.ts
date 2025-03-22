@@ -3,17 +3,26 @@ import { useState, useEffect } from 'react';
 import { Person } from '@/components/PersonCard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useAttendeeData = () => {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   const fetchData = async () => {
+    if (!user) {
+      setPeople([]);
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
       const { data: peopleData, error: peopleError } = await supabase
         .from('women_attendees')
-        .select('*');
+        .select('*')
+        .eq('user_id', user.id);
 
       if (peopleError) throw peopleError;
 
@@ -22,7 +31,8 @@ export const useAttendeeData = () => {
         .select(`
           person_id,
           accommodation_rooms(id, name)
-        `);
+        `)
+        .eq('user_id', user.id);
 
       if (allocationsError) throw allocationsError;
 
@@ -50,14 +60,20 @@ export const useAttendeeData = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user]);
 
   const handleDeletePerson = async (personId: string) => {
+    if (!user) {
+      toast.error("You must be logged in to perform this action");
+      return;
+    }
+    
     try {
       const { error } = await supabase
         .from('women_attendees')
         .delete()
-        .eq('id', personId);
+        .eq('id', personId)
+        .eq('user_id', user.id);
 
       if (error) throw error;
 

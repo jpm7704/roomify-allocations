@@ -20,6 +20,7 @@ export type Database = {
           name: string
           occupied: number | null
           type: string | null
+          user_id: string | null
         }
         Insert: {
           building?: string | null
@@ -31,6 +32,7 @@ export type Database = {
           name: string
           occupied?: number | null
           type?: string | null
+          user_id?: string | null
         }
         Update: {
           building?: string | null
@@ -42,6 +44,7 @@ export type Database = {
           name?: string
           occupied?: number | null
           type?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -314,6 +317,27 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       program_submissions: {
         Row: {
           approved_at: string | null
@@ -415,6 +439,7 @@ export type Database = {
           notes: string | null
           person_id: string | null
           room_id: string | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -423,6 +448,7 @@ export type Database = {
           notes?: string | null
           person_id?: string | null
           room_id?: string | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -431,6 +457,7 @@ export type Database = {
           notes?: string | null
           person_id?: string | null
           room_id?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -461,6 +488,7 @@ export type Database = {
           name: string
           phone: string | null
           special_needs: string | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -473,6 +501,7 @@ export type Database = {
           name: string
           phone?: string | null
           special_needs?: string | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -485,6 +514,7 @@ export type Database = {
           name?: string
           phone?: string | null
           special_needs?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
