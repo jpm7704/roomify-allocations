@@ -15,10 +15,19 @@ interface TextImportDialogProps {
   onSuccess: () => void;
 }
 
+interface AttendeeData {
+  number?: string;
+  name: string;
+  surname?: string;
+  roomPreference?: string;
+  dietary?: string;
+  paid?: string;
+}
+
 const TextImportDialog = ({ isOpen, onOpenChange, onSuccess }: TextImportDialogProps) => {
   const [text, setText] = useState<string>('');
   const [processing, setProcessing] = useState(false);
-  const [parsedNames, setParsedNames] = useState<string[]>([]);
+  const [parsedData, setParsedData] = useState<AttendeeData[]>([]);
   const [step, setStep] = useState<'input' | 'review' | 'success'>('input');
   const [results, setResults] = useState<{
     success: number;
@@ -30,30 +39,73 @@ const TextImportDialog = ({ isOpen, onOpenChange, onSuccess }: TextImportDialogP
     setText(e.target.value);
   };
 
-  const parseNames = () => {
+  const parseData = () => {
     // Split by newlines and filter out empty lines
-    const names = text
+    const lines = text
       .split('\n')
       .map(line => line.trim())
       .filter(line => line.length > 0);
+    
+    if (lines.length === 0) {
+      toast.error('Please enter at least one line of data');
+      return;
+    }
 
-    setParsedNames(names);
-    if (names.length > 0) {
+    const attendees: AttendeeData[] = [];
+    
+    lines.forEach(line => {
+      // Split by commas or tabs
+      const parts = line.split(/[,\t]+/).map(part => part.trim());
+      
+      // Must have at least a name
+      if (parts.length > 0 && parts[0]) {
+        const attendee: AttendeeData = {
+          name: '',
+        };
+
+        // Map parts to corresponding fields
+        if (parts.length >= 1) attendee.number = parts[0];
+        if (parts.length >= 2) attendee.name = parts[1];
+        if (parts.length >= 3) attendee.surname = parts[2];
+        if (parts.length >= 4) attendee.roomPreference = parts[3];
+        if (parts.length >= 5) attendee.dietary = parts[4];
+        if (parts.length >= 6) attendee.paid = parts[5];
+
+        // If no name found in the right position, use the first non-empty value
+        if (!attendee.name) {
+          for (const part of parts) {
+            if (part) {
+              attendee.name = part;
+              break;
+            }
+          }
+        }
+
+        // Only add if we have a name
+        if (attendee.name) {
+          attendees.push(attendee);
+        }
+      }
+    });
+
+    setParsedData(attendees);
+    
+    if (attendees.length > 0) {
       setStep('review');
     } else {
-      toast.error('Please enter at least one name');
+      toast.error('No valid data found. Please ensure each line contains at least a name.');
     }
   };
 
-  const removeName = (index: number) => {
-    const updatedNames = [...parsedNames];
-    updatedNames.splice(index, 1);
-    setParsedNames(updatedNames);
+  const removeAttendee = (index: number) => {
+    const updatedData = [...parsedData];
+    updatedData.splice(index, 1);
+    setParsedData(updatedData);
   };
 
   const processImport = async () => {
-    if (parsedNames.length === 0) {
-      toast.error('No names to import');
+    if (parsedData.length === 0) {
+      toast.error('No data to import');
       return;
     }
 
@@ -77,27 +129,35 @@ const TextImportDialog = ({ isOpen, onOpenChange, onSuccess }: TextImportDialogP
         throw new Error('Failed to create import record');
       }
 
-      // Process each name
-      for (let i = 0; i < parsedNames.length; i++) {
-        const name = parsedNames[i];
+      // Process each attendee
+      for (let i = 0; i < parsedData.length; i++) {
+        const attendee = parsedData[i];
+        
+        // Format the full name
+        const fullName = attendee.surname 
+          ? `${attendee.name} ${attendee.surname}` 
+          : attendee.name;
         
         try {
           const { error } = await supabase
             .from('women_attendees')
             .insert({
-              name,
-              import_source: 'manual-text-import'
+              name: fullName,
+              department: attendee.roomPreference || null,
+              special_needs: attendee.dietary || null,
+              import_source: 'manual-text-import',
+              // You can add more fields as they become available in the database structure
             });
 
           if (error) {
             failedCount++;
-            errors.push(`Failed to import "${name}": ${error.message}`);
+            errors.push(`Failed to import "${fullName}": ${error.message}`);
           } else {
             successCount++;
           }
         } catch (error) {
           failedCount++;
-          errors.push(`Failed to import "${name}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+          errors.push(`Failed to import "${fullName}": ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
 
@@ -143,7 +203,7 @@ const TextImportDialog = ({ isOpen, onOpenChange, onSuccess }: TextImportDialogP
 
   const resetForm = () => {
     setText('');
-    setParsedNames([]);
+    setParsedData([]);
     setStep('input');
     setResults({ success: 0, failed: 0, errors: [] });
   };
@@ -163,12 +223,12 @@ const TextImportDialog = ({ isOpen, onOpenChange, onSuccess }: TextImportDialogP
           <>
             <div className="space-y-4 py-2">
               <div className="grid w-full gap-1.5">
-                <Label htmlFor="names">Enter Names (one per line)</Label>
+                <Label htmlFor="names">Enter Attendee Data (one per line)</Label>
                 <Textarea
                   id="names"
-                  placeholder="Jane Doe
-Mary Smith
-Sarah Johnson"
+                  placeholder="1, Jane, Doe, Single Room, Vegetarian, Yes
+2, Mary, Smith, Double Room, None, Yes
+3, Sarah, Johnson, , Gluten Free, No"
                   rows={10}
                   value={text}
                   onChange={handleTextChange}
@@ -177,10 +237,15 @@ Sarah Johnson"
 
               <Alert>
                 <Info className="h-4 w-4" />
-                <AlertTitle>Simple Import</AlertTitle>
+                <AlertTitle>Simple Import Format</AlertTitle>
                 <AlertDescription>
-                  Enter each attendee's name on a separate line. 
-                  You can paste a list of names directly from Excel, Word, or any text editor.
+                  Enter each attendee on a separate line using this format:
+                  <div className="mt-2 text-xs">
+                    <code>No., Name, Surname, Room Preference, Dietary Needs, Paid</code>
+                  </div>
+                  <div className="mt-2">
+                    You can paste data directly from Excel, Word, or any text editor. Separate fields with commas or tabs.
+                  </div>
                 </AlertDescription>
               </Alert>
             </div>
@@ -193,7 +258,7 @@ Sarah Johnson"
                 Cancel
               </Button>
               <Button 
-                onClick={parseNames} 
+                onClick={parseData} 
                 disabled={!text.trim()}>
                 Continue to Review
               </Button>
@@ -207,31 +272,44 @@ Sarah Johnson"
             <div className="space-y-4 py-2">
               <Alert>
                 <Info className="h-4 w-4" />
-                <AlertTitle>Review Names</AlertTitle>
+                <AlertTitle>Review Attendee Data</AlertTitle>
                 <AlertDescription>
-                  Found {parsedNames.length} names to import. Please review before proceeding.
+                  Found {parsedData.length} attendees to import. Please review before proceeding.
                 </AlertDescription>
               </Alert>
               
               <div className="border rounded-md max-h-[300px] overflow-y-auto">
-                <div className="p-3 border-b bg-muted/50">
-                  <h3 className="font-medium">Attendees to Import</h3>
+                <div className="p-3 border-b bg-muted/50 sticky top-0">
+                  <div className="grid grid-cols-6 gap-2 text-xs font-medium">
+                    <div>No.</div>
+                    <div>Name</div>
+                    <div>Surname</div>
+                    <div>Room Pref</div>
+                    <div>Dietary</div>
+                    <div>Paid</div>
+                  </div>
                 </div>
                 <ul className="divide-y">
-                  {parsedNames.map((name, index) => (
-                    <li key={index} className="flex items-center justify-between p-3 hover:bg-muted/30">
-                      <div className="flex items-center gap-2">
-                        <Circle className="h-2 w-2 text-primary" />
-                        <span>{name}</span>
+                  {parsedData.map((attendee, index) => (
+                    <li key={index} className="hover:bg-muted/30">
+                      <div className="flex items-center justify-between p-3">
+                        <div className="grid grid-cols-6 gap-2 w-full text-sm">
+                          <div>{attendee.number || '-'}</div>
+                          <div>{attendee.name || '-'}</div>
+                          <div>{attendee.surname || '-'}</div>
+                          <div>{attendee.roomPreference || '-'}</div>
+                          <div>{attendee.dietary || '-'}</div>
+                          <div>{attendee.paid || '-'}</div>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => removeAttendee(index)} 
+                          className="h-8 w-8 p-0 ml-2"
+                        >
+                          <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => removeName(index)} 
-                        className="h-8 w-8 p-0"
-                      >
-                        <Trash2 className="h-4 w-4 text-muted-foreground" />
-                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -247,7 +325,7 @@ Sarah Johnson"
               </Button>
               <Button 
                 onClick={processImport} 
-                disabled={parsedNames.length === 0 || processing}>
+                disabled={parsedData.length === 0 || processing}>
                 {processing ? 'Importing...' : 'Import Attendees'}
               </Button>
             </div>
@@ -322,11 +400,11 @@ Sarah Johnson"
         handleClose();
       }
     }}>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-[650px]">
         <DialogHeader>
           <DialogTitle>Import Attendees</DialogTitle>
           <DialogDescription>
-            Quickly import multiple attendees by entering their names.
+            Quickly import multiple attendees by entering their details.
           </DialogDescription>
         </DialogHeader>
         
