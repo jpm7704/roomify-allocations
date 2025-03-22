@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { UserPlus, Search, FileUp } from 'lucide-react';
+import { UserPlus, Search, FileUp, AlignLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Layout from '@/components/Layout';
@@ -151,8 +151,8 @@ const People = () => {
               className="rounded-md" 
               onClick={() => setIsImportOpen(true)}
             >
-              <FileUp className="mr-2 h-4 w-4" />
-              Import Attendees
+              <AlignLeft className="mr-2 h-4 w-4" />
+              Text Import
             </Button>
             <Button className="rounded-md" onClick={handleOpenAddDialog}>
               <UserPlus className="mr-2 h-4 w-4" />
