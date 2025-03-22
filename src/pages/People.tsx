@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { UserPlus, Search, FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import AttendeeForm from '@/components/AttendeeForm';
 import AttendeeTabs from '@/components/AttendeeTabs';
 import { useNavigate } from 'react-router-dom';
-import ExcelUploadDialog from '@/components/ExcelUploadDialog';
+import TextImportDialog from '@/components/TextImportDialog';
 
 const People = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,7 +18,7 @@ const People = () => {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isExcelUploadOpen, setIsExcelUploadOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [currentPerson, setCurrentPerson] = useState<Person | undefined>(undefined);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
   const navigate = useNavigate();
@@ -148,7 +149,7 @@ const People = () => {
             <Button 
               variant="outline" 
               className="rounded-md" 
-              onClick={() => setIsExcelUploadOpen(true)}
+              onClick={() => setIsImportOpen(true)}
             >
               <FileUp className="mr-2 h-4 w-4" />
               Import Attendees
@@ -195,9 +196,9 @@ const People = () => {
           mode={formMode}
         />
         
-        <ExcelUploadDialog
-          isOpen={isExcelUploadOpen}
-          onOpenChange={setIsExcelUploadOpen}
+        <TextImportDialog
+          isOpen={isImportOpen}
+          onOpenChange={setIsImportOpen}
           onSuccess={handleImportSuccess}
         />
       </div>
