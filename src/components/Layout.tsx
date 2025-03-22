@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Moon, Sun, Users, X } from 'lucide-react';
+import { Moon, Sun, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Sidebar from './layout/Sidebar';
 import MobileHeader from './layout/MobileHeader';
@@ -66,7 +66,11 @@ const Layout = ({ children }: LayoutProps) => {
       />
     </div>, label: 'People' },
     { to: '/allocations', icon: <div className={`flex items-center justify-center rounded-full w-10 h-10 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
-      <Users className="w-7 h-7" />
+      <img 
+        src="/lovable-uploads/05b0639b-d9e5-4566-a726-6ff53fdabf3a.png" 
+        alt="Allocations" 
+        className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
+      />
     </div>, label: 'Allocations' },
   ];
 
