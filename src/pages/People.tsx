@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { UserPlus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -119,7 +120,11 @@ const People = () => {
   };
 
   const handleAddSuccess = (newPerson: Person) => {
-    setPeople([...people, newPerson]);
+    if (formMode === 'add') {
+      setPeople([...people, newPerson]);
+    } else if (formMode === 'edit') {
+      setPeople(people.map(p => p.id === newPerson.id ? newPerson : p));
+    }
   };
 
   return (

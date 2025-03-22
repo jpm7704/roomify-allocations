@@ -281,6 +281,39 @@ export type Database = {
           },
         ]
       }
+      file_imports: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          filename: string
+          id: string
+          records_failed: number | null
+          records_processed: number | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          filename: string
+          id?: string
+          records_failed?: number | null
+          records_processed?: number | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          filename?: string
+          id?: string
+          records_failed?: number | null
+          records_processed?: number | null
+          status?: string
+        }
+        Relationships: []
+      }
       program_submissions: {
         Row: {
           approved_at: string | null
@@ -423,6 +456,8 @@ export type Database = {
           email: string | null
           home_church: string | null
           id: string
+          import_source: string | null
+          imported_at: string | null
           name: string
           phone: string | null
           special_needs: string | null
@@ -433,6 +468,8 @@ export type Database = {
           email?: string | null
           home_church?: string | null
           id?: string
+          import_source?: string | null
+          imported_at?: string | null
           name: string
           phone?: string | null
           special_needs?: string | null
@@ -443,6 +480,8 @@ export type Database = {
           email?: string | null
           home_church?: string | null
           id?: string
+          import_source?: string | null
+          imported_at?: string | null
           name?: string
           phone?: string | null
           special_needs?: string | null

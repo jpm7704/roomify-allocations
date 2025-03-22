@@ -69,9 +69,35 @@ const AttendeeForm = ({ isOpen, onOpenChange, onSuccess, initialData, mode }: At
           form.reset();
         }
       } else if (mode === 'edit' && initialData?.id) {
-        // Implementation for edit mode would go here
-        // This functionality wasn't implemented in the original code
-        toast.info("Edit functionality to be implemented");
+        const { data, error } = await supabase
+          .from('women_attendees')
+          .update({
+            name: values.name,
+            email: values.email,
+            phone: values.phone,
+            department: values.department,
+            home_church: values.homeChurch,
+            special_needs: values.specialNeeds
+          })
+          .eq('id', initialData.id)
+          .select();
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const updatedPerson: Person = {
+            id: data[0].id,
+            name: data[0].name,
+            email: data[0].email || '',
+            department: data[0].department || data[0].home_church || '',
+            roomId: initialData.id ? undefined : undefined,
+            roomName: initialData.id ? undefined : undefined,
+          };
+          
+          onSuccess(updatedPerson);
+          toast.success("Attendee updated successfully");
+          onOpenChange(false);
+        }
       }
     } catch (error) {
       console.error("Error adding/editing person:", error);
