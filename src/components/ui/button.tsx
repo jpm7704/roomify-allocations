@@ -23,6 +23,9 @@ const buttonVariants = cva(
         maroon: "bg-maroon-600/90 backdrop-blur-sm text-white hover:bg-maroon-600/80 active:scale-[0.98]",
         blue: "bg-blue-600/90 backdrop-blur-sm text-white hover:bg-blue-600/80 active:scale-[0.98]",
         orange: "bg-orange-500/90 backdrop-blur-sm text-white hover:bg-orange-500/80 active:scale-[0.98]",
+        green: "bg-green-500/90 backdrop-blur-sm text-white hover:bg-green-500/80 active:scale-[0.98]",
+        purple: "bg-purple-600/90 backdrop-blur-sm text-white hover:bg-purple-600/80 active:scale-[0.98]",
+        teal: "bg-teal-500/90 backdrop-blur-sm text-white hover:bg-teal-500/80 active:scale-[0.98]",
       },
       size: {
         default: "h-10 px-4 py-2",

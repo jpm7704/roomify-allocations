@@ -86,17 +86,21 @@ const Rooms = () => {
     }
     
     try {
-      if (!values.name || !values.capacity) {
-        toast.error("Room name and capacity are required");
+      if (!values.chaletNumber || !values.capacity) {
+        toast.error("Chalet/Tent number and capacity are required");
         return;
       }
+
+      const roomName = values.name || (values.type === 'Chalet' 
+        ? `Chalet ${values.chaletNumber}${values.roomNumber ? ` - Room ${values.roomNumber}` : ''}`
+        : `Tent ${values.chaletNumber}`);
 
       const { data, error } = await supabase
         .from('accommodation_rooms')
         .insert({
-          name: values.name,
+          name: roomName,
           capacity: parseInt(values.capacity),
-          description: values.description,
+          description: values.notes || '',
           type: values.type || 'Chalet',
           occupied: 0,
           user_id: user.id
@@ -116,12 +120,12 @@ const Rooms = () => {
         };
 
         setRooms([...rooms, newRoom]);
-        toast.success(`${values.type === 'Personal tent' ? 'Tent' : 'Room'} "${values.name}" created successfully`);
+        toast.success(`${values.type === 'Personal tent' ? 'Tent' : 'Chalet'} "${roomName}" created successfully`);
         setIsRoomDialogOpen(false);
       }
     } catch (error) {
       console.error("Error creating room:", error);
-      toast.error("Failed to create room");
+      toast.error("Failed to create accommodation");
     }
   };
 

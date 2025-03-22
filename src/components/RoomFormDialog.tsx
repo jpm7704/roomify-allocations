@@ -9,10 +9,11 @@ import { Bed, Tent, Home } from 'lucide-react';
 import { useState } from 'react';
 
 interface RoomFormValues {
-  name: string;
-  capacity: string;
-  description: string;
   type: string;
+  chaletNumber: string;
+  roomNumber: string;
+  capacity: string;
+  notes: string;
 }
 
 interface RoomFormDialogProps {
@@ -32,40 +33,38 @@ const RoomFormDialog = ({
   
   const roomForm = useForm<RoomFormValues>({
     defaultValues: {
-      name: '',
-      capacity: '2',
-      description: '',
       type: 'Chalet',
+      chaletNumber: '',
+      roomNumber: '',
+      capacity: '2',
+      notes: '',
     },
   });
 
   const handleSave = () => {
     const values = roomForm.getValues();
-    onSave(values);
-  };
-
-  const getRoomTypeIcon = (type: string) => {
-    switch (type) {
-      case 'Chalet':
-        return <Home className="h-4 w-4 mr-2" />;
-      case 'Personal tent':
-        return <Tent className="h-4 w-4 mr-2" />;
-      default:
-        return <Home className="h-4 w-4 mr-2" />;
-    }
-  };
-
-  const getNameLabel = () => {
-    return selectedType === 'Personal tent' ? 'Tent Name*' : 'Room Name*';
+    
+    // Format room name based on type, chalet number and room number
+    const formattedValues = {
+      ...values,
+      // Create a name from the chalet and room number
+      name: selectedType === 'Chalet' 
+        ? `Chalet ${values.chaletNumber}${values.roomNumber ? ` - Room ${values.roomNumber}` : ''}`
+        : `Tent ${values.chaletNumber}`,
+      // Use notes as description
+      description: values.notes
+    };
+    
+    onSave(formattedValues);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Room</DialogTitle>
+          <DialogTitle>Add New Accommodation</DialogTitle>
           <DialogDescription>
-            Create a new accommodation room for attendees.
+            Create a new accommodation room or tent for attendees.
           </DialogDescription>
         </DialogHeader>
         
@@ -88,7 +87,7 @@ const RoomFormDialog = ({
                       <SelectTrigger>
                         <SelectValue placeholder="Select room type" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background/95 backdrop-blur-md">
                         <SelectItem value="Chalet">
                           <div className="flex items-center">
                             <Home className="h-4 w-4 mr-2" />
@@ -111,17 +110,40 @@ const RoomFormDialog = ({
 
             <FormField
               control={roomForm.control}
-              name="name"
+              name="chaletNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{getNameLabel()}</FormLabel>
+                  <FormLabel>{selectedType === 'Personal tent' ? 'Tent Number*' : 'Chalet Number*'}</FormLabel>
                   <FormControl>
-                    <Input placeholder={selectedType === 'Personal tent' ? "e.g. Tent 101" : "e.g. Room 101"} required {...field} />
+                    <Input 
+                      placeholder={selectedType === 'Personal tent' ? "e.g. 101" : "e.g. 23"} 
+                      required 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {selectedType === 'Chalet' && (
+              <FormField
+                control={roomForm.control}
+                name="roomNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Room Number</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="e.g. 101" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={roomForm.control}
@@ -145,12 +167,15 @@ const RoomFormDialog = ({
 
             <FormField
               control={roomForm.control}
-              name="description"
+              name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormLabel>Additional Notes</FormLabel>
                   <FormControl>
-                    <Input placeholder="Any additional details about the room" {...field} />
+                    <Input 
+                      placeholder="Any additional details about the accommodation" 
+                      {...field} 
+                    />
                   </FormControl>
                 </FormItem>
               )}
@@ -160,7 +185,7 @@ const RoomFormDialog = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={onCancel}>Cancel</Button>
-          <Button onClick={handleSave}>Save Room</Button>
+          <Button onClick={handleSave}>Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
