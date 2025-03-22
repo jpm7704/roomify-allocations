@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Building, Menu, Moon, Sun } from 'lucide-react';
+import { Building, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface MobileHeaderProps {
@@ -18,7 +18,11 @@ const MobileHeader = ({ openMobileMenu, theme, toggleTheme }: MobileHeaderProps)
         onClick={openMobileMenu}
         className="h-10 w-10 rounded-full"
       >
-        <Menu className="h-5 w-5" />
+        <div className="flex flex-col items-center justify-center gap-1">
+          <div className={`w-5 h-1.5 rounded-full ${theme === 'dark' ? 'bg-white' : 'bg-black'}`}></div>
+          <div className={`w-5 h-1.5 rounded-full ${theme === 'dark' ? 'bg-zinc-800' : 'bg-zinc-200'}`}></div>
+          <div className={`w-5 h-1.5 rounded-full ${theme === 'dark' ? 'bg-white' : 'bg-black'}`}></div>
+        </div>
       </Button>
       <div className="flex items-center gap-2">
         <Building className="w-5 h-5 text-primary" />
