@@ -21,6 +21,12 @@ const badgeVariants = cva(
           "bg-peach-200/80 text-maroon-800 ring-peach-300/50 hover:bg-peach-200 backdrop-blur-sm",
         maroon:
           "bg-maroon-100/80 text-maroon-700 ring-maroon-300/50 hover:bg-maroon-100 backdrop-blur-sm",
+        blue:
+          "bg-blue-100/80 text-blue-700 ring-blue-300/50 hover:bg-blue-100 backdrop-blur-sm",
+        orange:
+          "bg-orange-100/80 text-orange-700 ring-orange-300/50 hover:bg-orange-100 backdrop-blur-sm",
+        green:
+          "bg-green-100/80 text-green-700 ring-green-300/50 hover:bg-green-100 backdrop-blur-sm",
       },
     },
     defaultVariants: {
