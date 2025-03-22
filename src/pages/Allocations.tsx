@@ -1,19 +1,21 @@
+
 import { useState, useEffect } from 'react';
-import { Plus, Search, Building } from 'lucide-react';
+import { Plus, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import Layout from '@/components/Layout';
-import { Allocation } from '@/components/AllocationCard';
 import { Person } from '@/components/PersonCard';
 import { Room } from '@/components/RoomCard';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { Allocation } from '@/components/AllocationCard';
 import AllocationsList, { RoomWithOccupants } from '@/components/AllocationsList';
 import AllocationFormDialog from '@/components/AllocationFormDialog';
 import RoomFormDialog from '@/components/RoomFormDialog';
 import AllocationDetailsDialog from '@/components/AllocationDetailsDialog';
 import { useForm } from 'react-hook-form';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useAllocations } from '@/hooks/useAllocations';
+import { useAllocationFormHandlers } from '@/components/allocation/AllocationFormHandlers';
+import { useRoomHandlers } from '@/components/allocation/RoomHandlers';
+import { AllocationFilters } from '@/components/allocation/AllocationFilters';
 
 const Allocations = () => {
   const [searchParams] = useSearchParams();
@@ -21,20 +23,32 @@ const Allocations = () => {
   const roomIdFromUrl = searchParams.get('roomId');
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [allocations, setAllocations] = useState<Allocation[]>([]);
-  const [roomAllocations, setRoomAllocations] = useState<RoomWithOccupants[]>([]);
-  const [people, setPeople] = useState<Person[]>([]);
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
-  const [selectedPeople, setSelectedPeople] = useState<Person[]>([]);
-  const [multiSelectMode, setMultiSelectMode] = useState(false);
-  const [viewedAllocation, setViewedAllocation] = useState<Allocation | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  const [viewedRoomAllocation, setViewedRoomAllocation] = useState<RoomWithOccupants | null>(null);
+  const [filteredRoomAllocations, setFilteredRoomAllocations] = useState<RoomWithOccupants[]>([]);
+  
+  const {
+    loading,
+    allocations,
+    roomAllocations,
+    people,
+    rooms,
+    selectedPerson,
+    setSelectedPerson,
+    selectedRoom,
+    setSelectedRoom,
+    selectedPeople,
+    setSelectedPeople,
+    multiSelectMode,
+    setMultiSelectMode,
+    viewedAllocation,
+    setViewedAllocation,
+    viewedRoomAllocation,
+    setViewedRoomAllocation,
+    handleRemoveOccupant,
+    fetchData
+  } = useAllocations(roomIdFromUrl);
 
   const form = useForm({
     defaultValues: {
@@ -42,137 +56,52 @@ const Allocations = () => {
     },
   });
 
+  const {
+    handlePersonSelect,
+    handleMultiPersonSelect,
+    handleRoomSelect,
+    handleSaveAllocation
+  } = useAllocationFormHandlers(
+    rooms,
+    people,
+    allocations,
+    selectedPerson,
+    setSelectedPerson,
+    selectedRoom,
+    setSelectedRoom,
+    selectedPeople,
+    setSelectedPeople,
+    multiSelectMode,
+    setMultiSelectMode,
+    (newAllocations) => {},  // We'll use the fetchData function instead
+    (newRooms) => {},  // We'll use the fetchData function instead
+    (newPeople) => {},  // We'll use the fetchData function instead
+    setIsDialogOpen,
+    fetchData
+  );
+
+  const { handleSaveRoom } = useRoomHandlers(
+    rooms,
+    (newRooms) => {},  // We'll use the fetchData function instead
+    setIsRoomDialogOpen
+  );
+
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const { data: roomsData, error: roomsError } = await supabase
-          .from('accommodation_rooms')
-          .select('*');
-
-        if (roomsError) throw roomsError;
-
-        const { data: peopleData, error: peopleError } = await supabase
-          .from('women_attendees')
-          .select('*');
-
-        if (peopleError) throw peopleError;
-
-        const { data: allocationsData, error: allocationsError } = await supabase
-          .from('room_allocations')
-          .select(`
-            id,
-            date_assigned,
-            notes,
-            person_id,
-            room_id,
-            women_attendees!inner(id, name, email, phone, department, home_church),
-            accommodation_rooms!inner(id, name, capacity, occupied, type)
-          `);
-
-        if (allocationsError && allocationsError.code !== 'PGRST116') throw allocationsError;
-
-        const formattedRooms: Room[] = roomsData?.map(room => ({
-          id: room.id,
-          name: room.name,
-          capacity: room.capacity,
-          occupied: room.occupied || 0,
-          description: room.description,
-          type: room.type || 'Chalet'
-        })) || [];
-
-        const formattedPeople: Person[] = peopleData?.map(person => {
-          const allocation = allocationsData?.find(a => a.person_id === person.id);
-          return {
-            id: person.id,
-            name: person.name,
-            email: person.email || '',
-            department: person.department || person.home_church || '',
-            roomId: allocation ? allocation.room_id : undefined,
-            roomName: allocation ? allocation.accommodation_rooms.name : undefined
-          };
-        }) || [];
-
-        const formattedAllocations: Allocation[] = allocationsData?.map(allocation => {
-          const person: Person = {
-            id: allocation.person_id,
-            name: allocation.women_attendees.name,
-            email: allocation.women_attendees.email || '',
-            department: allocation.women_attendees.department || allocation.women_attendees.home_church || '',
-            roomId: allocation.room_id,
-            roomName: allocation.accommodation_rooms.name
-          };
-
-          const room: Room = {
-            id: allocation.room_id,
-            name: allocation.accommodation_rooms.name,
-            capacity: allocation.accommodation_rooms.capacity,
-            occupied: allocation.accommodation_rooms.occupied || 0,
-            type: allocation.accommodation_rooms.type || 'Chalet'
-          };
-
-          return {
-            id: allocation.id,
-            personId: allocation.person_id,
-            roomId: allocation.room_id,
-            person,
-            room,
-            dateAssigned: allocation.date_assigned,
-            notes: allocation.notes
-          };
-        }) || [];
-
-        const groupedRoomAllocations: RoomWithOccupants[] = [];
-        
-        formattedRooms.forEach(room => {
-          const allocationsForRoom = formattedAllocations.filter(a => a.roomId === room.id);
-          const occupants = allocationsForRoom.map(a => a.person);
-          
-          if (allocationsForRoom.length > 0 || room.occupied > 0) {
-            groupedRoomAllocations.push({
-              room,
-              occupants
-            });
-          }
-        });
-
-        setRooms(formattedRooms);
-        setPeople(formattedPeople);
-        setAllocations(formattedAllocations);
-        setRoomAllocations(groupedRoomAllocations);
-
-        if (roomIdFromUrl && formattedRooms.length > 0) {
-          const roomToSelect = formattedRooms.find(room => room.id === roomIdFromUrl);
-          if (roomToSelect) {
-            setSelectedRoom(roomToSelect);
-            if (roomToSelect.capacity > 1 && roomToSelect.capacity - roomToSelect.occupied > 1) {
-              setMultiSelectMode(true);
-            }
-            setIsDialogOpen(true);
-          }
+    if (roomIdFromUrl && rooms.length > 0) {
+      const roomToSelect = rooms.find(room => room.id === roomIdFromUrl);
+      if (roomToSelect) {
+        setSelectedRoom(roomToSelect);
+        if (roomToSelect.capacity > 1 && roomToSelect.capacity - roomToSelect.occupied > 1) {
+          setMultiSelectMode(true);
         }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        toast.error("Failed to load data");
-      } finally {
-        setLoading(false);
+        setIsDialogOpen(true);
       }
-    };
+    }
+  }, [roomIdFromUrl, rooms]);
 
-    fetchData();
-  }, [roomIdFromUrl]);
-
-  const filteredRoomAllocations = roomAllocations.filter(roomAllocation => {
-    const matchesSearch = 
-      roomAllocation.room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      roomAllocation.occupants.some(person => 
-        person.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        person.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (person.department && person.department.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-      
-    return matchesSearch;
-  });
+  useEffect(() => {
+    setFilteredRoomAllocations(roomAllocations);
+  }, [roomAllocations]);
 
   const handleCreateAllocation = () => {
     setSelectedPerson(null);
@@ -186,75 +115,8 @@ const Allocations = () => {
     setIsDialogOpen(true);
   };
   
-  const handleRemoveOccupant = async (roomId: string, personId: string) => {
-    try {
-      const allocation = allocations.find(a => a.roomId === roomId && a.personId === personId);
-      if (!allocation) {
-        toast.error("Allocation not found");
-        return;
-      }
-
-      const { error } = await supabase
-        .from('room_allocations')
-        .delete()
-        .eq('id', allocation.id);
-
-      if (error) throw error;
-
-      const { error: roomError } = await supabase
-        .from('accommodation_rooms')
-        .update({ occupied: allocation.room.occupied - 1 })
-        .eq('id', roomId);
-
-      if (roomError) throw roomError;
-
-      setAllocations(allocations.filter(a => a.id !== allocation.id));
-      
-      const updatedRooms = [...rooms];
-      const roomIndex = updatedRooms.findIndex(r => r.id === roomId);
-      if (roomIndex >= 0) {
-        updatedRooms[roomIndex] = {
-          ...updatedRooms[roomIndex],
-          occupied: updatedRooms[roomIndex].occupied - 1
-        };
-      }
-      setRooms(updatedRooms);
-
-      const updatedPeople = people.map(p => 
-        p.id === personId 
-          ? { ...p, roomId: undefined, roomName: undefined } 
-          : p
-      );
-      setPeople(updatedPeople);
-
-      const updatedRoomAllocations = [...roomAllocations];
-      const roomAllocationIndex = updatedRoomAllocations.findIndex(ra => ra.room.id === roomId);
-      if (roomAllocationIndex >= 0) {
-        updatedRoomAllocations[roomAllocationIndex] = {
-          ...updatedRoomAllocations[roomAllocationIndex],
-          room: {
-            ...updatedRoomAllocations[roomAllocationIndex].room,
-            occupied: updatedRoomAllocations[roomAllocationIndex].room.occupied - 1
-          },
-          occupants: updatedRoomAllocations[roomAllocationIndex].occupants.filter(o => o.id !== personId)
-        };
-        
-        if (updatedRoomAllocations[roomAllocationIndex].occupants.length === 0) {
-          updatedRoomAllocations.splice(roomAllocationIndex, 1);
-        }
-      }
-      setRoomAllocations(updatedRoomAllocations);
-
-      toast.success('Room allocation removed successfully');
-    } catch (error) {
-      console.error("Error removing allocation:", error);
-      toast.error("Failed to remove allocation");
-    }
-  };
-  
   const handleRoomAllocationClick = (roomAllocation: RoomWithOccupants) => {
     setViewedRoomAllocation(roomAllocation);
-    toast.info(`Viewing room: ${roomAllocation.room.name}`);
   };
 
   const handleAllocationClick = (allocation: Allocation) => {
@@ -271,302 +133,12 @@ const Allocations = () => {
     setIsDialogOpen(true);
   };
 
-  const handlePersonSelect = (person: Person) => {
-    setSelectedPerson(person);
-  };
-
-  const handleMultiPersonSelect = (person: Person, selected: boolean) => {
-    if (selected) {
-      setSelectedPeople(prev => [...prev, person]);
-    } else {
-      setSelectedPeople(prev => prev.filter(p => p.id !== person.id));
-    }
-  };
-
-  const handleRoomSelect = (room: Room) => {
-    setSelectedRoom(room);
-    
-    if (room.capacity > 1 && room.capacity - room.occupied > 1) {
-      setMultiSelectMode(true);
-      setSelectedPeople([]);
-    } else {
-      setMultiSelectMode(false);
-    }
-  };
-
   const handleCreateRoom = () => {
     setIsRoomDialogOpen(true);
   };
 
   const handleCancelRoomDialog = () => {
     setIsRoomDialogOpen(false);
-  };
-
-  const handleSaveRoom = async (values: any) => {
-    try {
-      if (!values.name || !values.capacity) {
-        toast.error("Room name and capacity are required");
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('accommodation_rooms')
-        .insert({
-          name: values.name,
-          capacity: parseInt(values.capacity),
-          description: values.description,
-          type: values.type || 'Chalet',
-          occupied: 0
-        })
-        .select();
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const newRoom: Room = {
-          id: data[0].id,
-          name: data[0].name,
-          capacity: data[0].capacity,
-          occupied: 0,
-          description: data[0].description,
-          type: data[0].type || 'Chalet'
-        };
-
-        setRooms([...rooms, newRoom]);
-        toast.success(`${values.type === 'Personal tent' ? 'Tent' : 'Room'} "${values.name}" created successfully`);
-        setIsRoomDialogOpen(false);
-      }
-    } catch (error) {
-      console.error("Error creating room:", error);
-      toast.error("Failed to create accommodation");
-    }
-  };
-
-  const handleSaveAllocation = async () => {
-    if (multiSelectMode && selectedPeople.length > 0 && selectedRoom) {
-      try {
-        if (selectedPeople.length > (selectedRoom.capacity - selectedRoom.occupied)) {
-          toast.error(`This room only has space for ${selectedRoom.capacity - selectedRoom.occupied} more people`);
-          return;
-        }
-
-        let totalNewAllocations = 0;
-        let totalUpdatedAllocations = 0;
-        const notes = form.getValues().notes;
-        
-        for (const person of selectedPeople) {
-          const existingAllocation = allocations.find(a => a.personId === person.id);
-          
-          if (existingAllocation) {
-            const { error } = await supabase
-              .from('room_allocations')
-              .update({ 
-                room_id: selectedRoom.id,
-                notes: notes,
-                date_assigned: new Date().toISOString()
-              })
-              .eq('id', existingAllocation.id);
-
-            if (error) throw error;
-
-            if (existingAllocation.roomId !== selectedRoom.id) {
-              await supabase
-                .from('accommodation_rooms')
-                .update({ occupied: existingAllocation.room.occupied - 1 })
-                .eq('id', existingAllocation.roomId);
-              
-              totalUpdatedAllocations++;
-            }
-          } else {
-            const { error } = await supabase
-              .from('room_allocations')
-              .insert({
-                person_id: person.id,
-                room_id: selectedRoom.id,
-                notes: notes,
-                date_assigned: new Date().toISOString()
-              });
-
-            if (error) throw error;
-            totalNewAllocations++;
-          }
-        }
-        
-        const newOccupancy = selectedRoom.occupied + totalNewAllocations + totalUpdatedAllocations;
-        await supabase
-          .from('accommodation_rooms')
-          .update({ occupied: newOccupancy })
-          .eq('id', selectedRoom.id);
-        
-        const { data: freshData, error: refreshError } = await supabase
-          .from('room_allocations')
-          .select(`
-            id,
-            date_assigned,
-            notes,
-            person_id,
-            room_id,
-            women_attendees!inner(id, name, email, phone, department, home_church),
-            accommodation_rooms!inner(id, name, capacity, occupied, type)
-          `);
-
-        if (refreshError) throw refreshError;
-
-        if (freshData) {
-          const { data: updatedRooms } = await supabase
-            .from('accommodation_rooms')
-            .select('*');
-
-          const updatedFormattedRooms: Room[] = updatedRooms?.map(room => ({
-            id: room.id,
-            name: room.name,
-            capacity: room.capacity,
-            occupied: room.occupied || 0,
-            description: room.description,
-            type: room.type || 'Chalet'
-          })) || [];
-
-          const updatedFormattedAllocations: Allocation[] = freshData.map((allocation: any) => {
-            const person: Person = {
-              id: allocation.person_id,
-              name: allocation.women_attendees.name,
-              email: allocation.women_attendees.email || '',
-              department: allocation.women_attendees.department || allocation.women_attendees.home_church || '',
-              roomId: allocation.room_id,
-              roomName: allocation.accommodation_rooms.name
-            };
-
-            const room: Room = {
-              id: allocation.room_id,
-              name: allocation.accommodation_rooms.name,
-              capacity: allocation.accommodation_rooms.capacity,
-              occupied: allocation.accommodation_rooms.occupied || 0,
-              type: allocation.accommodation_rooms.type || 'Chalet'
-            };
-
-            return {
-              id: allocation.id,
-              personId: allocation.person_id,
-              roomId: allocation.room_id,
-              person,
-              room,
-              dateAssigned: allocation.date_assigned,
-              notes: allocation.notes
-            };
-          });
-
-          const updatedPeople = people.map(person => {
-            const allocation = freshData.find((a: any) => a.person_id === person.id);
-            if (allocation) {
-              return {
-                ...person,
-                roomId: allocation.room_id,
-                roomName: allocation.accommodation_rooms.name
-              };
-            }
-            return person;
-          });
-
-          setRooms(updatedFormattedRooms);
-          setAllocations(updatedFormattedAllocations);
-          setPeople(updatedPeople);
-        }
-
-        let successMessage = '';
-        if (totalNewAllocations > 0 && totalUpdatedAllocations > 0) {
-          successMessage = `Assigned ${totalNewAllocations} new and updated ${totalUpdatedAllocations} existing allocations to ${selectedRoom.name}`;
-        } else if (totalNewAllocations > 0) {
-          successMessage = `Assigned ${totalNewAllocations} attendees to ${selectedRoom.name}`;
-        } else {
-          successMessage = `Updated room assignments to ${selectedRoom.name}`;
-        }
-
-        toast.success(successMessage);
-        setIsDialogOpen(false);
-        setSelectedPeople([]);
-
-      } catch (error) {
-        console.error("Error processing batch allocations:", error);
-        toast.error("Failed to save room allocations");
-      }
-      
-      return;
-    }
-
-    if (!selectedPerson || !selectedRoom) {
-      toast.error("Please select both a person and a room");
-      return;
-    }
-
-    if (selectedRoom.occupied >= selectedRoom.capacity) {
-      toast.error("This room is already at full capacity");
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('room_allocations')
-        .insert({
-          person_id: selectedPerson.id,
-          room_id: selectedRoom.id,
-          notes: form.getValues().notes,
-          date_assigned: new Date().toISOString()
-        })
-        .select();
-
-      if (error) throw error;
-
-      const { error: roomError } = await supabase
-        .from('accommodation_rooms')
-        .update({ occupied: selectedRoom.occupied + 1 })
-        .eq('id', selectedRoom.id);
-
-      if (roomError) throw roomError;
-
-      const idResponse = await supabase
-        .from('room_allocations')
-        .select('id')
-        .eq('person_id', selectedPerson.id)
-        .eq('room_id', selectedRoom.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      const newAllocationId = idResponse.data?.id;
-
-      const newAllocation: Allocation = {
-        id: newAllocationId || crypto.randomUUID(),
-        personId: selectedPerson.id,
-        roomId: selectedRoom.id,
-        dateAssigned: new Date().toISOString(),
-        notes: form.getValues().notes,
-        person: {
-          id: selectedPerson.id,
-          name: selectedPerson.name,
-          email: selectedPerson.email || '',
-          department: selectedPerson.department || '',
-          roomId: selectedRoom.id,
-          roomName: selectedRoom.name
-        },
-        room: {
-          id: selectedRoom.id,
-          name: selectedRoom.name,
-          capacity: selectedRoom.capacity,
-          occupied: selectedRoom.occupied + 1,
-          type: selectedRoom.type || 'Chalet'
-        }
-      };
-
-      setAllocations([...allocations, newAllocation]);
-      setRooms(rooms.map(r => r.id === selectedRoom.id ? { ...r, occupied: r.occupied + 1 } : r));
-      setPeople(people.map(p => p.id === selectedPerson.id ? { ...p, roomId: selectedRoom.id, roomName: selectedRoom.name } : p));
-
-      toast.success(`${selectedPerson.name} has been assigned to ${selectedRoom.name}`);
-      setIsDialogOpen(false);
-    } catch (error) {
-      console.error("Error creating/updating allocation:", error);
-      toast.error("Failed to save room allocation");
-    }
   };
 
   const handleCancelAllocationDialog = () => {
@@ -580,6 +152,7 @@ const Allocations = () => {
 
   const handleClearSearch = () => {
     setSearchQuery('');
+    setFilteredRoomAllocations(roomAllocations);
   };
   
   return (
@@ -605,17 +178,11 @@ const Allocations = () => {
           </div>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search allocations..."
-              className="pl-9 rounded-md"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
+        <AllocationFilters 
+          roomAllocations={roomAllocations}
+          onFilterChange={setFilteredRoomAllocations}
+          onSearchChange={setSearchQuery}
+        />
         
         <div className="mt-6">
           <AllocationsList
