@@ -102,7 +102,7 @@ export const useRooms = () => {
           toast.success(`Tent "${tentName}" created successfully`);
         }
       } 
-      // For Chalet type, we can have multiple rooms
+      // For Chalet type, we can have multiple rooms (no more limit of 4)
       else {
         const newRooms: Room[] = [];
         
