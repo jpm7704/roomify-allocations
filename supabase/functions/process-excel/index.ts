@@ -1,7 +1,6 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import * as XLSX from "https://esm.sh/xlsx@0.18.5";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
 
 const corsHeaders = {
@@ -55,56 +54,24 @@ serve(async (req) => {
         );
       }
 
-      // Process Excel file
-      console.log("Reading Excel file");
-      const arrayBuffer = await file.arrayBuffer();
+      // Process CSV file
+      console.log("Reading CSV file");
+      const csvText = new TextDecoder().decode(await file.arrayBuffer());
       
-      // Handle different Excel formats
-      let workbook;
-      try {
-        workbook = XLSX.read(arrayBuffer, { type: 'array' });
-      } catch (xlsxError) {
-        console.error("XLSX parsing error:", xlsxError);
-        await updateImportStatus(supabase, importRecord.id, 'failed', `Failed to parse Excel file: ${xlsxError.message}`);
+      // Split CSV into lines and parse
+      const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
+      
+      if (lines.length <= 1) { // Account for header row
+        await updateImportStatus(supabase, importRecord.id, 'failed', 'No data found in CSV file');
         return new Response(
-          JSON.stringify({ error: `Failed to parse Excel file: ${xlsxError.message}` }),
+          JSON.stringify({ error: 'No data found in CSV file' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
-      // Verify we have at least one sheet
-      if (!workbook.SheetNames.length) {
-        await updateImportStatus(supabase, importRecord.id, 'failed', 'No sheets found in Excel file');
-        return new Response(
-          JSON.stringify({ error: 'No sheets found in Excel file' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      
-      // Convert to JSON with header: 1 to get an array with the first row as headers
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-      
-      console.log(`Raw data from Excel: ${jsonData.length} rows`);
-      
-      if (jsonData.length <= 1) { // Account for header row
-        await updateImportStatus(supabase, importRecord.id, 'failed', 'No data found in Excel file');
-        return new Response(
-          JSON.stringify({ error: 'No data found in Excel file' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Extract header row and check if required columns exist
-      // This is a more flexible approach that normalizes the headers
-      let headerRow = jsonData[0];
-      console.log("Original headers:", headerRow);
-      
-      // Normalize headers - convert to string and trim whitespace
-      headerRow = headerRow.map(h => String(h).trim());
-      console.log("Normalized headers:", headerRow);
+      // Parse header row
+      let headerRow = lines[0].split(',').map(header => header.trim());
+      console.log("CSV headers:", headerRow);
       
       // Define expected column headers and their variations/aliases
       const requiredColumns = {
@@ -142,7 +109,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             error: errorMessage,
-            message: "Please ensure your Excel file has all the required columns. They can be named exactly as listed or use common variations.",
+            message: "Please ensure your CSV file has all the required columns. They can be named exactly as listed or use common variations.",
             requiredColumns: Object.keys(requiredColumns),
             possibleAliases: requiredColumns
           }),
@@ -151,31 +118,34 @@ serve(async (req) => {
       }
       
       // Process data rows (skip header)
-      const dataRows = jsonData.slice(1);
+      const dataRows = lines.slice(1);
       let successCount = 0;
       let failureCount = 0;
       
-      for (const row of dataRows) {
+      for (const line of dataRows) {
         try {
-          // Skip empty rows
-          if (!row || row.length === 0 || row.every(cell => cell === null || cell === undefined || cell === '')) {
+          // Skip empty lines
+          if (!line || line.trim() === '') {
             console.log("Skipping empty row");
             continue;
           }
           
+          // Simple CSV parsing (doesn't handle quoted values with commas)
+          const row = line.split(',').map(cell => cell.trim());
+          
           // Extract values using column indices map
-          const number = row[columnIndices["No."]] !== undefined ? String(row[columnIndices["No."]]).trim() : '';
-          const firstName = row[columnIndices["Name"]] !== undefined ? String(row[columnIndices["Name"]]).trim() : '';
-          const surname = row[columnIndices["Surname"]] !== undefined ? String(row[columnIndices["Surname"]]).trim() : '';
-          const roomPref = row[columnIndices["Room Pref"]] !== undefined ? String(row[columnIndices["Room Pref"]]).trim() : '';
-          const dietary = row[columnIndices["Dietary"]] !== undefined ? String(row[columnIndices["Dietary"]]).trim() : '';
-          const paid = row[columnIndices["Paid"]] !== undefined ? String(row[columnIndices["Paid"]]).trim() : '';
+          const number = row[columnIndices["No."]] || '';
+          const firstName = row[columnIndices["Name"]] || '';
+          const surname = row[columnIndices["Surname"]] || '';
+          const roomPref = row[columnIndices["Room Pref"]] || '';
+          const dietary = row[columnIndices["Dietary"]] || '';
+          const paid = row[columnIndices["Paid"]] || '';
           
           console.log(`Processing row: No=${number}, Name=${firstName}, Surname=${surname}, Room=${roomPref}, Dietary=${dietary}, Paid=${paid}`);
           
           // Validate required fields
           if (!firstName && !surname) {
-            console.log("Missing both first name and surname for row:", JSON.stringify(row));
+            console.log("Missing both first name and surname for row:", line);
             failureCount++;
             continue;
           }

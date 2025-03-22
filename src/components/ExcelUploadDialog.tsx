@@ -25,12 +25,10 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      // Accept both Excel formats
-      if (selectedFile.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' && 
-          selectedFile.type !== 'application/vnd.ms-excel' &&
-          !selectedFile.name.endsWith('.xlsx') && 
-          !selectedFile.name.endsWith('.xls')) {
-        toast.error('Please select a valid Excel file (.xls or .xlsx)');
+      // Accept CSV files
+      if (selectedFile.type !== 'text/csv' && 
+          !selectedFile.name.endsWith('.csv')) {
+        toast.error('Please select a valid CSV file (.csv)');
         return;
       }
       setFile(selectedFile);
@@ -59,7 +57,7 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
       setProgress(30);
       setStatus('processing');
       
-      toast.info('Processing your Excel file...');
+      toast.info('Processing your CSV file...');
       
       const response = await supabase.functions.invoke('process-excel', {
         body: formData,
@@ -72,7 +70,7 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
       setProgress(100);
       setStatus('success');
       
-      toast.success(`Excel file processed successfully! ${response.data.processed} records imported.`);
+      toast.success(`CSV file processed successfully! ${response.data.processed} records imported.`);
       
       if (response.data.failed > 0) {
         toast.warning(`${response.data.failed} records failed to import.`);
@@ -124,61 +122,46 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
   };
   
   const downloadTemplate = () => {
-    // Create a sample Excel file with the correct columns
+    // Create a sample CSV file with the correct columns
     const data = [
       ['No.', 'Name', 'Surname', 'Room Pref', 'Dietary', 'Paid'],
       ['1', 'Jane', 'Doe', 'Double Room', 'Vegetarian', 'Yes'],
       ['2', 'Mary', 'Smith', 'Single Room', 'None', 'No']
     ];
     
-    try {
-      // Create workbook and worksheet
-      const XLSX = require('xlsx');
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Attendees");
-      
-      // Generate and download file
-      XLSX.writeFile(wb, "attendees_template.xlsx");
-      
-      toast.success('Template downloaded successfully');
-    } catch (error) {
-      console.error('Error generating template:', error);
-      
-      // Fallback method - create CSV and trigger download
-      const csvContent = data.map(row => row.join(',')).join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'attendees_template.csv';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      toast.success('Template downloaded as CSV (Excel format not available)');
-    }
+    // Create CSV content
+    const csvContent = data.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'attendees_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success('Template downloaded successfully');
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Import Attendees from Excel</DialogTitle>
+          <DialogTitle>Import Attendees from CSV</DialogTitle>
           <DialogDescription>
-            Upload an Excel file (.xlsx or .xls) containing attendee data. We'll process it and organize it for you.
+            Upload a CSV file (.csv) containing attendee data. We'll process it and organize it for you.
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid w-full gap-1.5">
-            <Label htmlFor="file">Excel File</Label>
+            <Label htmlFor="file">CSV File</Label>
             <div className="flex items-center gap-2">
               <Input
                 id="file"
                 type="file"
-                accept=".xlsx,.xls"
+                accept=".csv"
                 onChange={handleFileChange}
                 disabled={uploading}
                 className={file ? 'file:text-primary' : ''}
@@ -195,15 +178,15 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
             <div className="flex items-start gap-2">
               <FileSpreadsheet className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium mb-1">Excel File Requirements</p>
-                <p className="text-muted-foreground mb-2">Your Excel file must:</p>
+                <p className="font-medium mb-1">CSV File Requirements</p>
+                <p className="text-muted-foreground mb-2">Your CSV file must:</p>
                 <ul className="list-disc pl-5 text-muted-foreground space-y-1">
-                  <li>Be in .xlsx or .xls format</li>
+                  <li>Be in .csv format</li>
                   <li>Have the first row as column headers</li>
                   <li>Include these column headers (or similar variations):</li>
                 </ul>
                 <div className="mt-2 mb-1 bg-muted p-2 rounded font-mono text-xs">
-                  No. | Name | Surname | Room Pref | Dietary | Paid
+                  No.,Name,Surname,Room Pref,Dietary,Paid
                 </div>
                 <div className="mt-3 flex justify-center">
                   <Button 
