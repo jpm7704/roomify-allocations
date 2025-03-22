@@ -1,6 +1,7 @@
 
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import AddChalet1to3 from './AddChalet1to3';
 
 interface RoomsHeaderProps {
   onAddRoom: () => void;
@@ -16,6 +17,7 @@ const RoomsHeader = ({ onAddRoom }: RoomsHeaderProps) => {
         </p>
       </div>
       <div className="flex items-center space-x-2">
+        <AddChalet1to3 onComplete={() => window.location.reload()} />
         <Button onClick={onAddRoom}>
           <PlusCircle className="h-4 w-4 mr-2" />
           Add Accommodation

@@ -53,6 +53,12 @@ const ChaletCard = ({
     
     return `${count} ${count === 1 ? bedTypeDisplay : bedTypeDisplay + 's'}`;
   };
+
+  // Clean room name when displaying in the room list
+  const cleanRoomName = (roomName: string) => {
+    // Remove the chalet name prefix to avoid duplication
+    return roomName.replace(`${chaletName} - `, '');
+  };
   
   return (
     <Card 
@@ -148,7 +154,7 @@ const ChaletCard = ({
                 onClick={() => onClick?.(room)}
               >
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium">{room.name.replace(chaletName + ' - ', '')}</h4>
+                  <h4 className="font-medium">{cleanRoomName(room.name)}</h4>
                   {room.occupied < room.capacity && (
                     <Button 
                       size="sm" 
