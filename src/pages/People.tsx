@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { UserPlus, Search } from 'lucide-react';
+import { UserPlus, Search, FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Layout from '@/components/Layout';
@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import AttendeeForm from '@/components/AttendeeForm';
 import AttendeeTabs from '@/components/AttendeeTabs';
 import { useNavigate } from 'react-router-dom';
+import ExcelUploadDialog from '@/components/ExcelUploadDialog';
 
 const People = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,51 +18,52 @@ const People = () => {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isExcelUploadOpen, setIsExcelUploadOpen] = useState(false);
   const [currentPerson, setCurrentPerson] = useState<Person | undefined>(undefined);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
   const navigate = useNavigate();
   
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const { data: peopleData, error: peopleError } = await supabase
+        .from('women_attendees')
+        .select('*');
+
+      if (peopleError) throw peopleError;
+
+      const { data: allocationsData, error: allocationsError } = await supabase
+        .from('room_allocations')
+        .select(`
+          person_id,
+          accommodation_rooms(id, name)
+        `);
+
+      if (allocationsError) throw allocationsError;
+
+      const formattedPeople: Person[] = peopleData.map(person => {
+        const allocation = allocationsData.find(a => a.person_id === person.id);
+        
+        return {
+          id: person.id,
+          name: person.name,
+          email: person.email || '',
+          department: person.department || person.home_church || '',
+          roomId: allocation ? allocation.accommodation_rooms.id : undefined,
+          roomName: allocation ? allocation.accommodation_rooms.name : undefined
+        };
+      });
+
+      setPeople(formattedPeople);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error("Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const { data: peopleData, error: peopleError } = await supabase
-          .from('women_attendees')
-          .select('*');
-
-        if (peopleError) throw peopleError;
-
-        const { data: allocationsData, error: allocationsError } = await supabase
-          .from('room_allocations')
-          .select(`
-            person_id,
-            accommodation_rooms(id, name)
-          `);
-
-        if (allocationsError) throw allocationsError;
-
-        const formattedPeople: Person[] = peopleData.map(person => {
-          const allocation = allocationsData.find(a => a.person_id === person.id);
-          
-          return {
-            id: person.id,
-            name: person.name,
-            email: person.email || '',
-            department: person.department || person.home_church || '',
-            roomId: allocation ? allocation.accommodation_rooms.id : undefined,
-            roomName: allocation ? allocation.accommodation_rooms.name : undefined
-          };
-        });
-
-        setPeople(formattedPeople);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        toast.error("Failed to load data");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
   
@@ -127,6 +129,11 @@ const People = () => {
     }
   };
 
+  const handleImportSuccess = () => {
+    fetchData();
+    toast.success("Attendee data imported successfully");
+  };
+
   return (
     <Layout>
       <div className="page-container">
@@ -138,10 +145,20 @@ const People = () => {
             </p>
           </div>
           
-          <Button className="rounded-md" onClick={handleOpenAddDialog}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Add Attendee
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              className="rounded-md" 
+              onClick={() => setIsExcelUploadOpen(true)}
+            >
+              <FileUp className="mr-2 h-4 w-4" />
+              Import Attendees
+            </Button>
+            <Button className="rounded-md" onClick={handleOpenAddDialog}>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Add Attendee
+            </Button>
+          </div>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -177,6 +194,12 @@ const People = () => {
           onSuccess={handleAddSuccess}
           initialData={currentPerson}
           mode={formMode}
+        />
+        
+        <ExcelUploadDialog
+          isOpen={isExcelUploadOpen}
+          onOpenChange={setIsExcelUploadOpen}
+          onSuccess={handleImportSuccess}
         />
       </div>
     </Layout>
