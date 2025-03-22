@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlignLeft, Check, X, AlertCircle, Info } from 'lucide-react';
+import { CheckCircle2, Circle, Info, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -15,171 +15,127 @@ interface TextImportDialogProps {
   onSuccess: () => void;
 }
 
-interface ParsedPerson {
-  no?: string;
-  name: string;
-  surname?: string;
-  roomPref?: string;
-  dietary?: string;
-  paid?: string;
-  valid: boolean;
-  error?: string;
-}
-
 const TextImportDialog = ({ isOpen, onOpenChange, onSuccess }: TextImportDialogProps) => {
-  const [text, setText] = useState('');
+  const [text, setText] = useState<string>('');
   const [processing, setProcessing] = useState(false);
-  const [previewData, setPreviewData] = useState<ParsedPerson[]>([]);
-  const [showPreview, setShowPreview] = useState(false);
+  const [parsedNames, setParsedNames] = useState<string[]>([]);
+  const [step, setStep] = useState<'input' | 'review' | 'success'>('input');
+  const [results, setResults] = useState<{
+    success: number;
+    failed: number;
+    errors: string[];
+  }>({ success: 0, failed: 0, errors: [] });
 
-  const parseData = (inputText: string): ParsedPerson[] => {
-    // Split by newlines and remove empty lines
-    const lines = inputText.split('\n').filter(line => line.trim() !== '');
-    
-    if (lines.length === 0) {
-      return [];
-    }
-
-    // Try to parse each line
-    return lines.map((line, index) => {
-      // Split by tabs or multiple spaces or commas with optional spaces
-      const parts = line.split(/[\t,]+|\s{2,}/).map(part => part.trim());
-      
-      if (parts.length < 2) {
-        return {
-          name: line.trim(),
-          valid: true
-        };
-      }
-
-      // Try to determine if the first column is a number
-      const firstIsNumber = !isNaN(Number(parts[0]));
-      
-      let result: ParsedPerson;
-      
-      if (firstIsNumber) {
-        // Format: No., Name, Surname, Room Pref, Dietary, Paid
-        result = {
-          no: parts[0],
-          name: parts[1] || '',
-          surname: parts[2] || '',
-          roomPref: parts[3] || '',
-          dietary: parts[4] || '',
-          paid: parts[5] || '',
-          valid: true
-        };
-      } else {
-        // Format might be: Name, Surname, Room Pref, Dietary, Paid (no number)
-        result = {
-          name: parts[0] || '',
-          surname: parts[1] || '',
-          roomPref: parts[2] || '',
-          dietary: parts[3] || '',
-          paid: parts[4] || '',
-          valid: true
-        };
-      }
-
-      // Validate: name is required
-      if (!result.name) {
-        result.valid = false;
-        result.error = 'Name is required';
-      }
-
-      return result;
-    });
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setText(e.target.value);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setText(value);
-    
-    if (value.trim()) {
-      const parsed = parseData(value);
-      setPreviewData(parsed);
-      setShowPreview(parsed.length > 0);
+  const parseNames = () => {
+    // Split by newlines and filter out empty lines
+    const names = text
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+    setParsedNames(names);
+    if (names.length > 0) {
+      setStep('review');
     } else {
-      setPreviewData([]);
-      setShowPreview(false);
+      toast.error('Please enter at least one name');
     }
   };
 
-  const handleSubmit = async () => {
-    if (!text.trim()) {
-      toast.error('Please enter some text to import');
-      return;
-    }
+  const removeName = (index: number) => {
+    const updatedNames = [...parsedNames];
+    updatedNames.splice(index, 1);
+    setParsedNames(updatedNames);
+  };
 
-    const parsedData = parseData(text);
-    
-    if (parsedData.length === 0) {
-      toast.error('No valid data found to import');
-      return;
-    }
-
-    const invalidEntries = parsedData.filter(person => !person.valid);
-    if (invalidEntries.length > 0) {
-      toast.error(`Found ${invalidEntries.length} invalid entries. Please fix them before importing.`);
+  const processImport = async () => {
+    if (parsedNames.length === 0) {
+      toast.error('No names to import');
       return;
     }
 
     setProcessing(true);
     let successCount = 0;
-    let errorCount = 0;
+    let failedCount = 0;
+    const errors: string[] = [];
 
     try {
-      // Process each person
-      for (const person of parsedData) {
-        if (!person.valid) continue;
+      // Create import record
+      const { data: importRecord, error: importError } = await supabase
+        .from('file_imports')
+        .insert({
+          filename: 'manual-text-import',
+          status: 'processing',
+        })
+        .select()
+        .single();
 
-        // Combine name and surname if both exist
-        const fullName = person.surname 
-          ? `${person.name} ${person.surname}`.trim() 
-          : person.name.trim();
+      if (importError) {
+        throw new Error('Failed to create import record');
+      }
 
+      // Process each name
+      for (let i = 0; i < parsedNames.length; i++) {
+        const name = parsedNames[i];
+        
         try {
           const { error } = await supabase
             .from('women_attendees')
             .insert({
-              name: fullName,
-              department: person.roomPref || '',
-              special_needs: person.dietary || '',
-              import_source: 'text_import',
-              // Additional metadata could be stored in a JSON field if needed
-              // e.g., paid status could be added to a metadata column if available
+              name,
+              import_source: 'manual-text-import'
             });
 
           if (error) {
-            console.error('Error importing person:', error);
-            errorCount++;
+            failedCount++;
+            errors.push(`Failed to import "${name}": ${error.message}`);
           } else {
             successCount++;
           }
-        } catch (err) {
-          console.error('Exception importing person:', err);
-          errorCount++;
+        } catch (error) {
+          failedCount++;
+          errors.push(`Failed to import "${name}": ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
 
+      // Update import status
+      const status = failedCount > 0 ? 'completed_with_errors' : 'completed';
+      const errorMessage = errors.length > 0 ? errors.slice(0, 5).join('; ') + (errors.length > 5 ? ` and ${errors.length - 5} more errors` : '') : null;
+      
+      await supabase
+        .from('file_imports')
+        .update({
+          status,
+          completed_at: new Date().toISOString(),
+          records_processed: successCount,
+          records_failed: failedCount,
+          error_message: errorMessage
+        })
+        .eq('id', importRecord.id);
+
+      // Set results and move to success step
+      setResults({
+        success: successCount,
+        failed: failedCount,
+        errors: errors
+      });
+      
+      setStep('success');
+      
       if (successCount > 0) {
         toast.success(`Successfully imported ${successCount} attendees`);
-        
-        if (errorCount > 0) {
-          toast.warning(`Failed to import ${errorCount} attendees`);
-        }
-        
-        // Clear form and close dialog on success
-        setText('');
-        setPreviewData([]);
-        setShowPreview(false);
-        onSuccess();
-        setTimeout(() => onOpenChange(false), 1500);
-      } else {
-        toast.error('Failed to import any attendees');
       }
-    } catch (err) {
-      console.error('Error in import process:', err);
-      toast.error('An unexpected error occurred during import');
+      
+      if (failedCount > 0) {
+        toast.error(`Failed to import ${failedCount} attendees`);
+      }
+      
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error('Import failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setProcessing(false);
     }
@@ -187,126 +143,194 @@ const TextImportDialog = ({ isOpen, onOpenChange, onSuccess }: TextImportDialogP
 
   const resetForm = () => {
     setText('');
-    setPreviewData([]);
-    setShowPreview(false);
+    setParsedNames([]);
+    setStep('input');
+    setResults({ success: 0, failed: 0, errors: [] });
+  };
+
+  const handleClose = () => {
+    onOpenChange(false);
+    resetForm();
+    if (results.success > 0) {
+      onSuccess();
+    }
+  };
+
+  const renderStep = () => {
+    switch (step) {
+      case 'input':
+        return (
+          <>
+            <div className="space-y-4 py-2">
+              <div className="grid w-full gap-1.5">
+                <Label htmlFor="names">Enter Names (one per line)</Label>
+                <Textarea
+                  id="names"
+                  placeholder="Jane Doe
+Mary Smith
+Sarah Johnson"
+                  rows={10}
+                  value={text}
+                  onChange={handleTextChange}
+                />
+              </div>
+
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertTitle>Simple Import</AlertTitle>
+                <AlertDescription>
+                  Enter each attendee's name on a separate line. 
+                  You can paste a list of names directly from Excel, Word, or any text editor.
+                </AlertDescription>
+              </Alert>
+            </div>
+            
+            <div className="flex justify-end gap-2 mt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={parseNames} 
+                disabled={!text.trim()}>
+                Continue to Review
+              </Button>
+            </div>
+          </>
+        );
+        
+      case 'review':
+        return (
+          <>
+            <div className="space-y-4 py-2">
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertTitle>Review Names</AlertTitle>
+                <AlertDescription>
+                  Found {parsedNames.length} names to import. Please review before proceeding.
+                </AlertDescription>
+              </Alert>
+              
+              <div className="border rounded-md max-h-[300px] overflow-y-auto">
+                <div className="p-3 border-b bg-muted/50">
+                  <h3 className="font-medium">Attendees to Import</h3>
+                </div>
+                <ul className="divide-y">
+                  {parsedNames.map((name, index) => (
+                    <li key={index} className="flex items-center justify-between p-3 hover:bg-muted/30">
+                      <div className="flex items-center gap-2">
+                        <Circle className="h-2 w-2 text-primary" />
+                        <span>{name}</span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => removeName(index)} 
+                        className="h-8 w-8 p-0"
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2 mt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setStep('input')}>
+                Back
+              </Button>
+              <Button 
+                onClick={processImport} 
+                disabled={parsedNames.length === 0 || processing}>
+                {processing ? 'Importing...' : 'Import Attendees'}
+              </Button>
+            </div>
+          </>
+        );
+        
+      case 'success':
+        return (
+          <>
+            <div className="space-y-4 py-2">
+              <Alert variant="success">
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertTitle>Import Complete</AlertTitle>
+                <AlertDescription>
+                  Successfully imported {results.success} attendees.
+                  {results.failed > 0 && ` Failed to import ${results.failed} attendees.`}
+                </AlertDescription>
+              </Alert>
+              
+              {results.failed > 0 && results.errors.length > 0 && (
+                <div className="border rounded-md overflow-hidden">
+                  <div className="p-3 border-b bg-muted/50">
+                    <h3 className="font-medium text-destructive">Import Errors</h3>
+                  </div>
+                  <ul className="divide-y max-h-[200px] overflow-y-auto">
+                    {results.errors.slice(0, 5).map((error, index) => (
+                      <li key={index} className="p-3 text-sm text-destructive">
+                        {error}
+                      </li>
+                    ))}
+                    {results.errors.length > 5 && (
+                      <li className="p-3 text-sm text-muted-foreground">
+                        And {results.errors.length - 5} more errors...
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
+              
+              {results.success > 0 && (
+                <div className="flex flex-col items-center justify-center py-4">
+                  <div className="text-center">
+                    <p className="mb-2">Do you want to add more attendees?</p>
+                    <div className="flex gap-2 justify-center">
+                      <Button 
+                        variant="outline" 
+                        onClick={resetForm}
+                        className="gap-1"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add More
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end mt-4">
+              <Button onClick={handleClose}>
+                {results.success > 0 ? 'Done' : 'Close'}
+              </Button>
+            </div>
+          </>
+        );
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
-      onOpenChange(open);
-      if (!open) resetForm();
+      if (!open) {
+        handleClose();
+      }
     }}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle>Import Attendees from Text</DialogTitle>
+          <DialogTitle>Import Attendees</DialogTitle>
           <DialogDescription>
-            Paste a list of attendees. Format: No., Name, Surname, Room Pref, Dietary, Paid.
+            Quickly import multiple attendees by entering their names.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="text-input">Paste Attendee Data</Label>
-            <Textarea
-              id="text-input"
-              placeholder="1 Jane Doe Single Vegetarian Yes
-2 John Smith Double None No"
-              value={text}
-              onChange={handleInputChange}
-              className="min-h-[150px] font-mono text-sm"
-              disabled={processing}
-            />
-            
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p>• Each person should be on a new line</p>
-              <p>• Format: No., Name, Surname, Room Pref, Dietary, Paid</p>
-              <p>• Only the name is required, other fields are optional</p>
-              <p>• Separate fields with commas, tabs or multiple spaces</p>
-            </div>
-          </div>
-
-          {showPreview && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-1 text-sm font-medium">
-                <Info className="h-4 w-4" />
-                Preview ({previewData.length} entries)
-              </div>
-              
-              <div className="border rounded-md overflow-hidden">
-                <div className="bg-muted px-3 py-2 text-xs font-medium border-b">
-                  Data Preview
-                </div>
-                <div className="max-h-[200px] overflow-y-auto p-2">
-                  {previewData.map((person, index) => (
-                    <div 
-                      key={index}
-                      className={`text-xs font-mono p-1.5 flex items-start gap-2 ${
-                        index % 2 === 0 ? 'bg-muted/30' : ''
-                      } ${!person.valid ? 'border-l-2 border-destructive pl-2' : ''}`}
-                    >
-                      {person.valid ? (
-                        <Check className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                      ) : (
-                        <X className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
-                      )}
-                      <div className="leading-tight">
-                        <span className="font-medium">
-                          {person.surname 
-                            ? `${person.name} ${person.surname}` 
-                            : person.name}
-                        </span>
-                        {(person.roomPref || person.dietary) && (
-                          <span className="text-muted-foreground">
-                            {person.roomPref && ` • Room: ${person.roomPref}`}
-                            {person.dietary && ` • Dietary: ${person.dietary}`}
-                            {person.paid && ` • Paid: ${person.paid}`}
-                          </span>
-                        )}
-                        {!person.valid && person.error && (
-                          <div className="text-destructive mt-0.5">{person.error}</div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {previewData.length > 0 && previewData.some(p => !p.valid) && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Invalid Entries Detected</AlertTitle>
-              <AlertDescription>
-                Please fix the highlighted entries before importing.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="flex justify-end gap-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-              disabled={processing}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSubmit}
-              disabled={processing || previewData.length === 0 || previewData.some(p => !p.valid)}
-            >
-              {processing ? (
-                <>Processing...</>
-              ) : (
-                <>
-                  <AlignLeft className="mr-2 h-4 w-4" />
-                  Import Attendees
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
+        {renderStep()}
       </DialogContent>
     </Dialog>
   );
