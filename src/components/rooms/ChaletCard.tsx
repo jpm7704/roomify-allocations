@@ -79,11 +79,13 @@ const ChaletCard = ({
         </div>
         
         <div className="flex items-center space-x-2">
-          <CollapsibleTrigger asChild onClick={() => setIsOpen(!isOpen)}>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-              {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </CollapsibleTrigger>
+          <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </CollapsibleTrigger>
+          </Collapsible>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -137,7 +139,7 @@ const ChaletCard = ({
           </div>
         </div>
         
-        <Collapsible open={isOpen}>
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
           <CollapsibleContent className="mt-4 space-y-3">
             {rooms.map((room) => (
               <div 
