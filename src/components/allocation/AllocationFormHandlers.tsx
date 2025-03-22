@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -37,9 +36,9 @@ export const useAllocationFormHandlers = (
 
   const handleMultiPersonSelect = (person: Person, selected: boolean) => {
     if (selected) {
-      setSelectedPeople(prev => [...prev, person]);
+      setSelectedPeople([...selectedPeople, person]);
     } else {
-      setSelectedPeople(prev => prev.filter(p => p.id !== person.id));
+      setSelectedPeople(selectedPeople.filter(p => p.id !== person.id));
     }
   };
 
