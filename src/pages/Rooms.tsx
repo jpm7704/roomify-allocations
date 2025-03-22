@@ -21,7 +21,8 @@ const Rooms = () => {
     handleDeleteRoom,
     handleEditRoom,
     handleRoomClick,
-    handleAssignRoom
+    handleAssignRoom,
+    fetchRooms
   } = useRooms();
   
   const handleOpenRoomDialog = () => {
@@ -30,6 +31,11 @@ const Rooms = () => {
 
   const handleCancelRoomDialog = () => {
     setIsRoomDialogOpen(false);
+  };
+  
+  const handleDataCleared = () => {
+    // Refresh the rooms data after clearing
+    fetchRooms();
   };
   
   const filteredRooms = useMemo(() => {
@@ -52,7 +58,10 @@ const Rooms = () => {
   return (
     <Layout>
       <div className="page-container">
-        <RoomsHeader onAddRoom={handleOpenRoomDialog} />
+        <RoomsHeader 
+          onAddRoom={handleOpenRoomDialog} 
+          onDataCleared={handleDataCleared}
+        />
         <RoomsSearch searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         
         <RoomsTabs 
