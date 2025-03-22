@@ -28,7 +28,7 @@ const NavItem = ({ to, icon, label, active, collapsed, onClick }: NavItemProps) 
             )}
             onClick={onClick}
           >
-            <div className="flex-shrink-0 w-6 h-6">{icon}</div>
+            <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">{icon}</div>
             {!collapsed && (
               <span className="transition-all duration-500 ease-in-out font-medium whitespace-nowrap overflow-hidden">{label}</span>
             )}

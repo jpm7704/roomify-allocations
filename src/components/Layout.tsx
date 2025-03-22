@@ -44,28 +44,28 @@ const Layout = ({ children }: LayoutProps) => {
   };
   
   const navItems = [
-    { to: '/', icon: <div className={`flex items-center justify-center rounded-full w-6 h-6 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
+    { to: '/', icon: <div className={`flex items-center justify-center rounded-full w-8 h-8 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
       <img 
         src="/lovable-uploads/d33adaab-fb15-4c72-942c-bfeeb00ae13f.png" 
         alt="Home" 
-        className={`w-5 h-5 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
+        className={`w-6 h-6 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
       />
     </div>, label: 'Home' },
-    { to: '/rooms', icon: <div className={`flex items-center justify-center rounded-full w-6 h-6 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
+    { to: '/rooms', icon: <div className={`flex items-center justify-center rounded-full w-8 h-8 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
       <img 
         src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
         alt="Rooms" 
-        className={`w-5 h-5 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`} 
+        className={`w-6 h-6 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`} 
       />
     </div>, label: 'Rooms' },
-    { to: '/people', icon: <div className={`flex items-center justify-center rounded-full w-6 h-6 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
+    { to: '/people', icon: <div className={`flex items-center justify-center rounded-full w-8 h-8 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
       <img 
         src="/lovable-uploads/836f0a81-66af-413a-a8fc-fc8bb7b27059.png" 
         alt="People" 
-        className={`w-5 h-5 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
+        className={`w-6 h-6 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
       />
     </div>, label: 'People' },
-    { to: '/allocations', icon: <Users className="w-6 h-6" />, label: 'Allocations' },
+    { to: '/allocations', icon: <Users className="w-7 h-7" />, label: 'Allocations' },
   ];
 
   return (

@@ -31,21 +31,21 @@ const Sidebar = ({ navOpen, toggleNav, theme, toggleTheme, navItems }: SidebarPr
         <div className="p-4 flex items-center justify-between border-b border-border">
           {navOpen ? (
             <div className="font-bold text-xl flex items-center gap-3">
-              <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
                 <img 
                   src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
                   alt="Roomify Logo" 
-                  className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
+                  className={`w-8 h-8 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
                 />
               </div>
               <span className="text-foreground">Roomify</span>
             </div>
           ) : (
-            <div className="w-9 h-9 mx-auto rounded-md bg-primary/10 flex items-center justify-center">
+            <div className="w-10 h-10 mx-auto rounded-md bg-primary/10 flex items-center justify-center">
               <img 
                 src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
                 alt="Roomify Logo" 
-                className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
+                className={`w-8 h-8 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
               />
             </div>
           )}
