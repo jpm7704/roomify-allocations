@@ -28,12 +28,15 @@ const NavItem = ({ to, icon, label, active, collapsed, onClick }: NavItemProps) 
             )}
             onClick={onClick}
           >
-            <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center">{icon}</div>
+            <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center">{icon}</div>
             {!collapsed && (
               <span className="transition-all duration-500 ease-in-out font-medium whitespace-nowrap overflow-hidden">{label}</span>
             )}
             {active && (
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-primary rounded-full" />
+              <div className={cn(
+                "absolute left-0 top-1/2 -translate-y-1/2 w-1.5 bg-primary rounded-full",
+                collapsed ? "h-12" : "h-10"
+              )} />
             )}
           </Link>
         </TooltipTrigger>
