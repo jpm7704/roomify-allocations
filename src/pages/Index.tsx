@@ -6,55 +6,69 @@ import Layout from '@/components/Layout';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   // Fetch rooms data
   const { data: rooms } = useQuery({
-    queryKey: ['rooms'],
+    queryKey: ['rooms', user?.id],
     queryFn: async () => {
+      if (!user) return [];
+      
       const { data, error } = await supabase
         .from('accommodation_rooms')
-        .select('*');
+        .select('*')
+        .eq('user_id', user.id);
       
       if (error) throw error;
       return data || [];
-    }
+    },
+    enabled: !!user
   });
 
   // Fetch people data
   const { data: people } = useQuery({
-    queryKey: ['people'],
+    queryKey: ['people', user?.id],
     queryFn: async () => {
+      if (!user) return [];
+      
       const { data, error } = await supabase
         .from('women_attendees')
-        .select('*');
+        .select('*')
+        .eq('user_id', user.id);
       
       if (error) throw error;
       return data || [];
-    }
+    },
+    enabled: !!user
   });
 
   // Fetch allocations data
   const { data: allocations } = useQuery({
-    queryKey: ['allocations'],
+    queryKey: ['allocations', user?.id],
     queryFn: async () => {
+      if (!user) return [];
+      
       const { data, error } = await supabase
         .from('room_allocations')
-        .select('*');
+        .select('*')
+        .eq('user_id', user.id);
       
       if (error) throw error;
       return data || [];
-    }
+    },
+    enabled: !!user
   });
 
-  // Calculate the stats based on real data
+  // Calculate the stats based on real user data
   const roomCount = rooms?.length || 0;
   const peopleCount = people?.length || 0;
   const allocationsCount = allocations?.length || 0;
   
-  // Create stats based on real data
+  // Create stats based on real user data
   const stats = [
     { 
       title: 'Total Rooms', 
@@ -128,7 +142,7 @@ const Index = () => {
               <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
             <CardContent>
-              {allocations && allocations.length > 0 ? (
+              {user && allocations && allocations.length > 0 ? (
                 <div className="space-y-4">
                   {allocations.slice(0, 5).map((allocation, index) => (
                     <div key={index} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
