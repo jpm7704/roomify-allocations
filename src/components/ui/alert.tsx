@@ -9,13 +9,17 @@ const alertVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-background text-foreground",
+        default: "bg-background/70 backdrop-blur-sm text-foreground",
         destructive:
           "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
         warning: 
           "border-amber-500/30 text-amber-700 dark:border-amber-500/20 dark:text-amber-500 [&>svg]:text-amber-500",
         success: 
           "border-green-500/30 text-green-700 dark:border-green-500/20 dark:text-green-500 [&>svg]:text-green-500",
+        peach:
+          "bg-peach-100/70 backdrop-blur-sm border-peach-300/50 text-maroon-800 [&>svg]:text-peach-600",
+        maroon:
+          "bg-maroon-50/70 backdrop-blur-sm border-maroon-200/50 text-maroon-700 [&>svg]:text-maroon-500",
       },
     },
     defaultVariants: {
