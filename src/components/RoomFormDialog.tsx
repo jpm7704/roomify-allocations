@@ -47,26 +47,53 @@ const RoomFormDialog = ({
   const handleSave = () => {
     const values = roomForm.getValues();
     onSave(values);
+    
+    // Reset form after save
+    roomForm.reset({
+      type: 'Chalet',
+      chaletNumber: '',
+      rooms: [{ roomNumber: '', capacity: 2 }],
+      notes: '',
+    });
   };
 
   const addRoom = () => {
-    const currentRooms = roomForm.getValues().rooms;
+    const currentRooms = roomForm.getValues().rooms || [];
     if (currentRooms.length < 4) {
-      roomForm.setValue('rooms', [...currentRooms, { roomNumber: '', capacity: 2 }]);
+      const updatedRooms = [...currentRooms, { roomNumber: '', capacity: 2 }];
+      roomForm.setValue('rooms', updatedRooms);
+      // Force re-render to show the new room field
+      roomForm.trigger('rooms');
     }
   };
 
   const removeRoom = (index: number) => {
-    const currentRooms = roomForm.getValues().rooms;
+    const currentRooms = roomForm.getValues().rooms || [];
     if (currentRooms.length > 1) {
       const updatedRooms = [...currentRooms];
       updatedRooms.splice(index, 1);
       roomForm.setValue('rooms', updatedRooms);
+      // Force re-render to update the room fields
+      roomForm.trigger('rooms');
     }
   };
 
+  // Close handler to reset form
+  const handleClose = (open: boolean) => {
+    if (!open) {
+      roomForm.reset({
+        type: 'Chalet',
+        chaletNumber: '',
+        rooms: [{ roomNumber: '', capacity: 2 }],
+        notes: '',
+      });
+      setSelectedType('Chalet');
+    }
+    onOpenChange(open);
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add New Accommodation</DialogTitle>
@@ -88,8 +115,13 @@ const RoomFormDialog = ({
                       onValueChange={(value) => {
                         field.onChange(value);
                         setSelectedType(value);
+                        // Reset rooms when changing type
+                        if (value === 'Personal tent') {
+                          roomForm.setValue('rooms', [{ roomNumber: '', capacity: 2 }]);
+                        }
                       }}
                       defaultValue={field.value}
+                      value={field.value}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select room type" />
@@ -142,14 +174,14 @@ const RoomFormDialog = ({
                     size="sm" 
                     variant="outline" 
                     onClick={addRoom}
-                    disabled={roomForm.getValues().rooms.length >= 4}
+                    disabled={(roomForm.getValues().rooms || []).length >= 4}
                   >
                     <Plus className="h-4 w-4" />
                     <span className="ml-1">Add Room</span>
                   </Button>
                 </div>
 
-                {roomForm.getValues().rooms.map((room, index) => (
+                {roomForm.watch('rooms').map((room, index) => (
                   <div key={index} className="border p-3 rounded-md space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-medium">Room {index + 1}</h4>
