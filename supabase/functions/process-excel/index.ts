@@ -33,6 +33,8 @@ serve(async (req) => {
         );
       }
 
+      console.log(`Processing file: ${file.name}, type: ${file.type}, size: ${file.size} bytes`);
+
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
       
       // Save import record
@@ -53,16 +55,29 @@ serve(async (req) => {
         );
       }
 
-      // Process Excel file
+      // Process Excel file - ensuring we properly handle xlsx format
       const arrayBuffer = await file.arrayBuffer();
+      // Set the type to 'array' which works better for binary data
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      
+      // Verify we have at least one sheet
+      if (!workbook.SheetNames.length) {
+        await updateImportStatus(supabase, importRecord.id, 'failed', 'No sheets found in Excel file');
+        return new Response(
+          JSON.stringify({ error: 'No sheets found in Excel file' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-      const rawData = XLSX.utils.sheet_to_json(worksheet, { header: "A" });
-
-      console.log(`Processing ${rawData.length} rows from Excel file`);
-
-      if (rawData.length <= 1) { // Account for header row
+      
+      // Convert to JSON with header: 1 to get an array with the first row as headers
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      
+      console.log(`Raw data from Excel: ${jsonData.length} rows`);
+      
+      if (jsonData.length <= 1) { // Account for header row
         await updateImportStatus(supabase, importRecord.id, 'failed', 'No data found in Excel file');
         return new Response(
           JSON.stringify({ error: 'No data found in Excel file' }),
@@ -70,72 +85,94 @@ serve(async (req) => {
         );
       }
 
-      // Extract header row to identify column positions
-      const headerRow = rawData[0];
-      console.log("Header row:", JSON.stringify(headerRow));
-
-      // Find column indices
-      const columnMap = {};
-      Object.keys(headerRow).forEach(key => {
-        const value = String(headerRow[key]).trim();
-        columnMap[value] = key;
+      // Extract header row and validate expected columns
+      const headers = jsonData[0];
+      console.log("Headers found:", headers);
+      
+      // Define expected column headers
+      const expectedHeaders = ["No.", "Name", "Surname", "Room Pref", "Dietary", "Paid"];
+      
+      // Check if all expected headers exist
+      const missingHeaders = expectedHeaders.filter(header => !headers.includes(header));
+      if (missingHeaders.length > 0) {
+        const errorMessage = `Missing required columns: ${missingHeaders.join(", ")}`;
+        console.error(errorMessage);
+        await updateImportStatus(supabase, importRecord.id, 'failed', errorMessage);
+        return new Response(
+          JSON.stringify({ error: errorMessage }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Create a mapping of column indices
+      const columnIndices = {};
+      headers.forEach((header, index) => {
+        if (typeof header === 'string') {
+          columnIndices[header.trim()] = index;
+        }
       });
-
-      console.log("Column mapping:", JSON.stringify(columnMap));
-
-      // Skip header row for processing
-      const dataRows = rawData.slice(1);
+      
+      console.log("Column mappings:", columnIndices);
+      
+      // Process data rows (skip header)
+      const dataRows = jsonData.slice(1);
       let successCount = 0;
       let failureCount = 0;
       
       for (const row of dataRows) {
-        // Extract values using column mapping
-        const number = columnMap['No.'] ? row[columnMap['No.']] : null;
-        const firstName = columnMap['Name'] ? row[columnMap['Name']] : null;
-        const surname = columnMap['Surname'] ? row[columnMap['Surname']] : null;
-        const roomPref = columnMap['Room Pref'] ? row[columnMap['Room Pref']] : null;
-        const dietary = columnMap['Dietary'] ? row[columnMap['Dietary']] : null;
-        const paid = columnMap['Paid'] ? row[columnMap['Paid']] : null;
+        try {
+          // Skip empty rows
+          if (!row || row.length === 0 || row.every(cell => cell === null || cell === undefined || cell === '')) {
+            console.log("Skipping empty row");
+            continue;
+          }
+          
+          // Extract values based on column indices
+          const number = row[columnIndices["No."]]?.toString() || '';
+          const firstName = row[columnIndices["Name"]]?.toString() || '';
+          const surname = row[columnIndices["Surname"]]?.toString() || '';
+          const roomPref = row[columnIndices["Room Pref"]]?.toString() || '';
+          const dietary = row[columnIndices["Dietary"]]?.toString() || '';
+          const paid = row[columnIndices["Paid"]]?.toString() || '';
+          
+          console.log(`Processing row: No=${number}, Name=${firstName}, Surname=${surname}, Room=${roomPref}, Dietary=${dietary}, Paid=${paid}`);
+          
+          // Validate required fields
+          if (!firstName && !surname) {
+            console.error("Missing both first name and surname for row:", JSON.stringify(row));
+            failureCount++;
+            continue;
+          }
+          
+          // Create full name
+          const fullName = [firstName, surname].filter(Boolean).join(' ').trim();
+          
+          // Prepare person data for insertion
+          const person = {
+            name: fullName,
+            special_needs: dietary || '',
+            department: roomPref || '',
+            home_church: paid === 'Yes' ? 'Paid' : 'Not Paid',
+            import_source: file.name,
+            imported_at: new Date().toISOString(),
+          };
+          
+          console.log(`Inserting person: ${fullName}`, JSON.stringify(person));
+          
+          // Insert person record
+          const { error: insertError } = await supabase
+            .from('women_attendees')
+            .insert(person);
 
-        console.log(`Row data for ${number}:`, JSON.stringify({ firstName, surname, roomPref, dietary, paid }));
-        
-        // Create full name - ensure we have at least one name component
-        let fullName = null;
-        if (firstName && surname) {
-          fullName = `${firstName} ${surname}`.trim();
-        } else if (firstName) {
-          fullName = String(firstName).trim();
-        } else if (surname) {
-          fullName = String(surname).trim();
-        }
-        
-        if (!fullName) {
-          console.error("Missing required name field in row:", JSON.stringify(row));
+          if (insertError) {
+            console.error(`Error inserting person ${fullName}:`, insertError);
+            failureCount++;
+          } else {
+            successCount++;
+          }
+        } catch (rowError) {
+          console.error("Error processing row:", rowError);
           failureCount++;
-          continue;
-        }
-        
-        const person = {
-          name: fullName,
-          special_needs: dietary ? String(dietary) : '',
-          department: roomPref ? String(roomPref) : '',
-          home_church: paid === 'Yes' ? 'Paid' : 'Not Paid',
-          import_source: file.name,
-          imported_at: new Date().toISOString(),
-        };
-        
-        console.log(`Inserting person: ${fullName}`, JSON.stringify(person));
-        
-        // Insert person record
-        const { error: insertError } = await supabase
-          .from('women_attendees')
-          .insert(person);
-
-        if (insertError) {
-          console.error(`Error inserting person ${fullName}:`, insertError);
-          failureCount++;
-        } else {
-          successCount++;
         }
       }
 

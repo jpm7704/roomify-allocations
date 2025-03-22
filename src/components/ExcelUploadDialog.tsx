@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, FileUpIcon, AlertTriangle, HelpCircle } from 'lucide-react';
+import { Upload, FileUpIcon, AlertTriangle, HelpCircle, FileSpreadsheet } from 'lucide-react';
 
 interface ExcelUploadDialogProps {
   isOpen: boolean;
@@ -24,8 +24,11 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
+      // Accept both Excel formats
       if (selectedFile.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' && 
-          selectedFile.type !== 'application/vnd.ms-excel') {
+          selectedFile.type !== 'application/vnd.ms-excel' &&
+          !selectedFile.name.endsWith('.xlsx') && 
+          !selectedFile.name.endsWith('.xls')) {
         toast.error('Please select a valid Excel file (.xls or .xlsx)');
         return;
       }
@@ -100,7 +103,7 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
         <DialogHeader>
           <DialogTitle>Import Attendees from Excel</DialogTitle>
           <DialogDescription>
-            Upload an Excel file containing attendee data. We'll process it and organize it for you.
+            Upload an Excel file (.xlsx or .xls) containing attendee data. We'll process it and organize it for you.
           </DialogDescription>
         </DialogHeader>
         
@@ -126,18 +129,21 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
 
           <div className="bg-muted/50 p-3 rounded-md border">
             <div className="flex items-start gap-2">
-              <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <FileSpreadsheet className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium mb-1">Expected Excel Format</p>
-                <p className="text-muted-foreground mb-2">Your Excel file must have the following columns in the first row:</p>
+                <p className="font-medium mb-1">Excel File Requirements</p>
+                <p className="text-muted-foreground mb-2">Your Excel file must:</p>
                 <ul className="list-disc pl-5 text-muted-foreground space-y-1">
-                  <li><strong>No.</strong> - Attendee number</li>
-                  <li><strong>Name</strong> - First name</li>
-                  <li><strong>Surname</strong> - Last name</li>
-                  <li><strong>Room Pref</strong> - Room preference</li>
-                  <li><strong>Dietary</strong> - Dietary requirements</li>
-                  <li><strong>Paid</strong> - Payment status (Yes/No)</li>
+                  <li>Be in .xlsx or .xls format</li>
+                  <li>Have the first row as column headers</li>
+                  <li>Include these <strong>exact</strong> column headers:</li>
                 </ul>
+                <div className="mt-2 mb-1 bg-muted p-2 rounded font-mono text-xs">
+                  No. | Name | Surname | Room Pref | Dietary | Paid
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  <strong>Important:</strong> The column names must match exactly as shown above (including capitalization and spacing).
+                </p>
               </div>
             </div>
           </div>
