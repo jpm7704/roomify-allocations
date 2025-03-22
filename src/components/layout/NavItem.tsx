@@ -35,7 +35,7 @@ const NavItem = ({ to, icon, label, active, collapsed, onClick }: NavItemProps) 
             {active && (
               <div className={cn(
                 "absolute left-0 top-1/2 -translate-y-1/2 w-1.5 bg-primary rounded-full",
-                collapsed ? "h-12" : "h-10"
+                collapsed ? "h-16" : "h-10"
               )} />
             )}
           </Link>
