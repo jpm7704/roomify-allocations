@@ -71,6 +71,7 @@ const AddChalet1to3 = ({ onComplete }: { onComplete: () => void }) => {
 
     try {
       for (const chalet of sampleChalets) {
+        // Create the chalet name without duplicating "Chalet" prefix
         const chaletName = `Chalet ${chalet.chaletNumber}`;
         
         try {
