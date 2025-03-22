@@ -8,7 +8,7 @@ import { Person } from '@/components/PersonCard';
 import { Room } from '@/components/RoomCard';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import AllocationsList from '@/components/AllocationsList';
+import AllocationsList, { RoomWithOccupants } from '@/components/AllocationsList';
 import AllocationFormDialog from '@/components/AllocationFormDialog';
 import RoomFormDialog from '@/components/RoomFormDialog';
 import AllocationDetailsDialog from '@/components/AllocationDetailsDialog';
@@ -22,6 +22,7 @@ const Allocations = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [allocations, setAllocations] = useState<Allocation[]>([]);
+  const [roomAllocations, setRoomAllocations] = useState<RoomWithOccupants[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,6 +34,7 @@ const Allocations = () => {
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [viewedAllocation, setViewedAllocation] = useState<Allocation | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [viewedRoomAllocation, setViewedRoomAllocation] = useState<RoomWithOccupants | null>(null);
 
   const form = useForm({
     defaultValues: {
@@ -120,9 +122,24 @@ const Allocations = () => {
           };
         }) || [];
 
+        const groupedRoomAllocations: RoomWithOccupants[] = [];
+        
+        formattedRooms.forEach(room => {
+          const allocationsForRoom = formattedAllocations.filter(a => a.roomId === room.id);
+          const occupants = allocationsForRoom.map(a => a.person);
+          
+          if (allocationsForRoom.length > 0 || room.occupied > 0) {
+            groupedRoomAllocations.push({
+              room,
+              occupants
+            });
+          }
+        });
+
         setRooms(formattedRooms);
         setPeople(formattedPeople);
         setAllocations(formattedAllocations);
+        setRoomAllocations(groupedRoomAllocations);
 
         if (roomIdFromUrl && formattedRooms.length > 0) {
           const roomToSelect = formattedRooms.find(room => room.id === roomIdFromUrl);
@@ -145,13 +162,14 @@ const Allocations = () => {
     fetchData();
   }, [roomIdFromUrl]);
 
-  const filteredAllocations = allocations.filter(allocation => {
+  const filteredRoomAllocations = roomAllocations.filter(roomAllocation => {
     const matchesSearch = 
-      allocation.person.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      allocation.person.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      allocation.person.department?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      allocation.room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      allocation.room.building?.toLowerCase().includes(searchQuery.toLowerCase());
+      roomAllocation.room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      roomAllocation.occupants.some(person => 
+        person.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        person.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (person.department && person.department.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
       
     return matchesSearch;
   });
@@ -168,29 +186,32 @@ const Allocations = () => {
     setIsDialogOpen(true);
   };
   
-  const handleRemoveAllocation = async (allocationId: string) => {
+  const handleRemoveOccupant = async (roomId: string, personId: string) => {
     try {
+      const allocation = allocations.find(a => a.roomId === roomId && a.personId === personId);
+      if (!allocation) {
+        toast.error("Allocation not found");
+        return;
+      }
+
       const { error } = await supabase
         .from('room_allocations')
         .delete()
-        .eq('id', allocationId);
+        .eq('id', allocation.id);
 
       if (error) throw error;
 
-      const allocation = allocations.find(a => a.id === allocationId);
-      if (allocation) {
-        const { error: roomError } = await supabase
-          .from('accommodation_rooms')
-          .update({ occupied: allocation.room.occupied - 1 })
-          .eq('id', allocation.roomId);
+      const { error: roomError } = await supabase
+        .from('accommodation_rooms')
+        .update({ occupied: allocation.room.occupied - 1 })
+        .eq('id', roomId);
 
-        if (roomError) throw roomError;
-      }
+      if (roomError) throw roomError;
 
-      setAllocations(allocations.filter(a => a.id !== allocationId));
+      setAllocations(allocations.filter(a => a.id !== allocation.id));
       
       const updatedRooms = [...rooms];
-      const roomIndex = updatedRooms.findIndex(r => r.id === allocation?.roomId);
+      const roomIndex = updatedRooms.findIndex(r => r.id === roomId);
       if (roomIndex >= 0) {
         updatedRooms[roomIndex] = {
           ...updatedRooms[roomIndex],
@@ -200,11 +221,29 @@ const Allocations = () => {
       setRooms(updatedRooms);
 
       const updatedPeople = people.map(p => 
-        p.id === allocation?.personId 
+        p.id === personId 
           ? { ...p, roomId: undefined, roomName: undefined } 
           : p
       );
       setPeople(updatedPeople);
+
+      const updatedRoomAllocations = [...roomAllocations];
+      const roomAllocationIndex = updatedRoomAllocations.findIndex(ra => ra.room.id === roomId);
+      if (roomAllocationIndex >= 0) {
+        updatedRoomAllocations[roomAllocationIndex] = {
+          ...updatedRoomAllocations[roomAllocationIndex],
+          room: {
+            ...updatedRoomAllocations[roomAllocationIndex].room,
+            occupied: updatedRoomAllocations[roomAllocationIndex].room.occupied - 1
+          },
+          occupants: updatedRoomAllocations[roomAllocationIndex].occupants.filter(o => o.id !== personId)
+        };
+        
+        if (updatedRoomAllocations[roomAllocationIndex].occupants.length === 0) {
+          updatedRoomAllocations.splice(roomAllocationIndex, 1);
+        }
+      }
+      setRoomAllocations(updatedRoomAllocations);
 
       toast.success('Room allocation removed successfully');
     } catch (error) {
@@ -213,6 +252,11 @@ const Allocations = () => {
     }
   };
   
+  const handleRoomAllocationClick = (roomAllocation: RoomWithOccupants) => {
+    setViewedRoomAllocation(roomAllocation);
+    toast.info(`Viewing room: ${roomAllocation.room.name}`);
+  };
+
   const handleAllocationClick = (allocation: Allocation) => {
     setViewedAllocation(allocation);
     setIsDetailsDialogOpen(true);
@@ -576,10 +620,10 @@ const Allocations = () => {
         <div className="mt-6">
           <AllocationsList
             loading={loading}
-            allocations={filteredAllocations}
+            roomAllocations={filteredRoomAllocations}
             searchQuery={searchQuery}
-            onRemove={handleRemoveAllocation}
-            onClick={handleAllocationClick}
+            onRemoveOccupant={handleRemoveOccupant}
+            onClick={handleRoomAllocationClick}
             onCreateRoom={handleCreateRoom}
             onCreateAllocation={searchQuery ? handleClearSearch : handleCreateAllocation}
             hasRooms={rooms.length > 0}
@@ -618,7 +662,12 @@ const Allocations = () => {
           allocation={viewedAllocation}
           isOpen={isDetailsDialogOpen}
           onOpenChange={setIsDetailsDialogOpen}
-          onDelete={handleRemoveAllocation}
+          onDelete={handleRemoveOccupant ? (id) => {
+            const allocation = allocations.find(a => a.id === id);
+            if (allocation) {
+              handleRemoveOccupant(allocation.roomId, allocation.personId);
+            }
+          } : undefined}
           onEdit={handleEditAllocation}
         />
       </div>

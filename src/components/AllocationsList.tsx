@@ -1,14 +1,21 @@
 
 import { Loader2, Users } from 'lucide-react';
-import AllocationCard, { Allocation } from '@/components/AllocationCard';
+import RoomAllocationCard from '@/components/RoomAllocationCard';
 import { Button } from '@/components/ui/button';
+import { Room } from '@/components/RoomCard';
+import { Person } from '@/components/PersonCard';
+
+export interface RoomWithOccupants {
+  room: Room;
+  occupants: Person[];
+}
 
 interface AllocationsListProps {
   loading: boolean;
-  allocations: Allocation[];
+  roomAllocations: RoomWithOccupants[];
   searchQuery: string;
-  onRemove: (allocationId: string) => void;
-  onClick: (allocation: Allocation) => void;
+  onRemoveOccupant: (roomId: string, personId: string) => void;
+  onClick: (roomAllocation: RoomWithOccupants) => void;
   onCreateRoom: () => void;
   onCreateAllocation: () => void;
   hasRooms: boolean;
@@ -16,9 +23,9 @@ interface AllocationsListProps {
 
 const AllocationsList = ({ 
   loading, 
-  allocations, 
+  roomAllocations, 
   searchQuery, 
-  onRemove, 
+  onRemoveOccupant, 
   onClick,
   onCreateRoom,
   onCreateAllocation,
@@ -33,7 +40,7 @@ const AllocationsList = ({
     );
   }
 
-  if (allocations.length === 0) {
+  if (roomAllocations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <Users className="h-12 w-12 text-muted-foreground mb-4" />
@@ -61,11 +68,11 @@ const AllocationsList = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {allocations.map((allocation) => (
-        <AllocationCard
-          key={allocation.id}
-          allocation={allocation}
-          onRemove={onRemove}
+      {roomAllocations.map((roomAllocation) => (
+        <RoomAllocationCard
+          key={roomAllocation.room.id}
+          roomAllocation={roomAllocation}
+          onRemoveOccupant={onRemoveOccupant}
           onClick={onClick}
         />
       ))}
