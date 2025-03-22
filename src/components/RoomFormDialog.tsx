@@ -5,14 +5,18 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
-import { Bed, Tent, Home } from 'lucide-react';
+import { Bed, Tent, Home, Plus, Minus } from 'lucide-react';
 import { useState } from 'react';
+
+interface Room {
+  roomNumber: string;
+  capacity: number;
+}
 
 interface RoomFormValues {
   type: string;
   chaletNumber: string;
-  roomNumber: string;
-  capacity: string;
+  rooms: Room[];
   notes: string;
 }
 
@@ -35,27 +39,30 @@ const RoomFormDialog = ({
     defaultValues: {
       type: 'Chalet',
       chaletNumber: '',
-      roomNumber: '',
-      capacity: '2',
+      rooms: [{ roomNumber: '', capacity: 2 }],
       notes: '',
     },
   });
 
   const handleSave = () => {
     const values = roomForm.getValues();
-    
-    // Format room name based on type, chalet number and room number
-    const formattedValues = {
-      ...values,
-      // Create a name from the chalet and room number
-      name: selectedType === 'Chalet' 
-        ? `Chalet ${values.chaletNumber}${values.roomNumber ? ` - Room ${values.roomNumber}` : ''}`
-        : `Tent ${values.chaletNumber}`,
-      // Use notes as description
-      description: values.notes
-    };
-    
-    onSave(formattedValues);
+    onSave(values);
+  };
+
+  const addRoom = () => {
+    const currentRooms = roomForm.getValues().rooms;
+    if (currentRooms.length < 4) {
+      roomForm.setValue('rooms', [...currentRooms, { roomNumber: '', capacity: 2 }]);
+    }
+  };
+
+  const removeRoom = (index: number) => {
+    const currentRooms = roomForm.getValues().rooms;
+    if (currentRooms.length > 1) {
+      const updatedRooms = [...currentRooms];
+      updatedRooms.splice(index, 1);
+      roomForm.setValue('rooms', updatedRooms);
+    }
   };
 
   return (
@@ -127,16 +134,97 @@ const RoomFormDialog = ({
             />
 
             {selectedType === 'Chalet' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium">Rooms in Chalet (max 4)</h3>
+                  <Button 
+                    type="button" 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={addRoom}
+                    disabled={roomForm.getValues().rooms.length >= 4}
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="ml-1">Add Room</span>
+                  </Button>
+                </div>
+
+                {roomForm.getValues().rooms.map((room, index) => (
+                  <div key={index} className="border p-3 rounded-md space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium">Room {index + 1}</h4>
+                      {index > 0 && (
+                        <Button 
+                          type="button" 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => removeRoom(index)}
+                        >
+                          <Minus className="h-4 w-4" />
+                          <span className="ml-1">Remove</span>
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={roomForm.control}
+                        name={`rooms.${index}.roomNumber`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Room Number</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="e.g. 101" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={roomForm.control}
+                        name={`rooms.${index}.capacity`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Capacity*</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min="1" 
+                                required
+                                placeholder="Beds" 
+                                {...field}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {selectedType === 'Personal tent' && (
               <FormField
                 control={roomForm.control}
-                name="roomNumber"
+                name="rooms.0.capacity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Room Number</FormLabel>
+                    <FormLabel>Capacity*</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="e.g. 101" 
-                        {...field} 
+                        type="number" 
+                        min="1" 
+                        required
+                        placeholder="Number of beds" 
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -144,26 +232,6 @@ const RoomFormDialog = ({
                 )}
               />
             )}
-
-            <FormField
-              control={roomForm.control}
-              name="capacity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Capacity*</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      min="1" 
-                      required
-                      placeholder="Number of beds" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <FormField
               control={roomForm.control}
