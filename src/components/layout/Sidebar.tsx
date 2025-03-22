@@ -31,21 +31,21 @@ const Sidebar = ({ navOpen, toggleNav, theme, toggleTheme, navItems }: SidebarPr
         <div className="p-4 flex items-center justify-between border-b border-border">
           {navOpen ? (
             <div className="font-bold text-xl flex items-center gap-3">
-              <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center">
                 <img 
                   src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
                   alt="Roomify Logo" 
-                  className={`w-6 h-6 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
+                  className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
                 />
               </div>
               <span className="text-foreground">Roomify</span>
             </div>
           ) : (
-            <div className="w-8 h-8 mx-auto rounded-md bg-primary/10 flex items-center justify-center">
+            <div className="w-9 h-9 mx-auto rounded-md bg-primary/10 flex items-center justify-center">
               <img 
                 src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
                 alt="Roomify Logo" 
-                className={`w-6 h-6 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
+                className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
               />
             </div>
           )}
@@ -56,7 +56,7 @@ const Sidebar = ({ navOpen, toggleNav, theme, toggleTheme, navItems }: SidebarPr
               className="rounded-full hover:bg-primary/10" 
               onClick={toggleNav}
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-6 w-6" />
             </Button>
           )}
         </div>
@@ -68,7 +68,7 @@ const Sidebar = ({ navOpen, toggleNav, theme, toggleTheme, navItems }: SidebarPr
             className="rounded-full mx-auto mt-2 hover:bg-primary/10" 
             onClick={toggleNav}
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-6 w-6" />
           </Button>
         )}
         
@@ -99,12 +99,12 @@ const Sidebar = ({ navOpen, toggleNav, theme, toggleTheme, navItems }: SidebarPr
             variant="outline" 
             size="icon" 
             onClick={toggleTheme}
-            className="rounded-full"
+            className="rounded-full h-10 w-10"
           >
             {theme === 'light' ? (
-              <Moon className="h-5 w-5" />
+              <Moon className="h-6 w-6" />
             ) : (
-              <Sun className="h-5 w-5" />
+              <Sun className="h-6 w-6" />
             )}
           </Button>
           

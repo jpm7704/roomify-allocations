@@ -21,14 +21,14 @@ const NavItem = ({ to, icon, label, active, collapsed, onClick }: NavItemProps) 
           <Link 
             to={to} 
             className={cn(
-              "relative flex items-center justify-center sm:justify-start gap-3 px-3 py-3 rounded-lg transition-all duration-500 ease-in-out group w-full",
+              "relative flex items-center justify-center sm:justify-start gap-3 px-3 py-3.5 rounded-lg transition-all duration-500 ease-in-out group w-full",
               active 
                 ? "text-primary font-medium bg-primary/10" 
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
             )}
             onClick={onClick}
           >
-            <div className="flex-shrink-0 w-5 h-5">{icon}</div>
+            <div className="flex-shrink-0 w-6 h-6">{icon}</div>
             {!collapsed && (
               <span className="transition-all duration-500 ease-in-out font-medium whitespace-nowrap overflow-hidden">{label}</span>
             )}
