@@ -21,7 +21,8 @@ const NavItem = ({ to, icon, label, active, collapsed, onClick }: NavItemProps) 
           <Link 
             to={to} 
             className={cn(
-              "relative flex items-center justify-center sm:justify-start gap-3 px-3 py-3.5 rounded-lg transition-all duration-500 ease-in-out group w-full",
+              "relative flex items-center gap-3 px-3 py-3.5 rounded-lg transition-all duration-500 ease-in-out group w-full",
+              collapsed ? "justify-center" : "justify-start",
               active 
                 ? "text-primary font-medium bg-primary/10" 
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
