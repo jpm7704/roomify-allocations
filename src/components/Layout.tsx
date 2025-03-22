@@ -1,14 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { Moon, Sun, X, LogOut } from 'lucide-react';
+import { Moon, Sun, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Sidebar from './layout/Sidebar';
 import MobileHeader from './layout/MobileHeader';
 import { Drawer, DrawerContent } from './ui/drawer';
 import { Button } from './ui/button';
-import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { toast } from '@/hooks/use-toast';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,8 +15,6 @@ const Layout = ({ children }: LayoutProps) => {
   const [navOpen, setNavOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
-  const { signOut, user } = useAuth();
-  const navigate = useNavigate();
   
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
@@ -46,24 +41,6 @@ const Layout = ({ children }: LayoutProps) => {
 
   const closeMobileNav = () => {
     setIsMobileDrawerOpen(false);
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast({
-        title: "Signed out",
-        description: "You have been successfully signed out.",
-      });
-      navigate('/auth');
-    } catch (error) {
-      console.error('Sign out error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to sign out.",
-        variant: "destructive",
-      });
-    }
   };
   
   const navItems = [
@@ -144,7 +121,7 @@ const Layout = ({ children }: LayoutProps) => {
                   </a>
                 ))}
               </nav>
-              <div className="pt-4 pb-8 px-4 border-t border-border mt-4 flex items-center justify-between">
+              <div className="pt-4 pb-8 px-4 border-t border-border mt-4">
                 <Button 
                   variant="outline" 
                   size="icon" 
@@ -157,17 +134,6 @@ const Layout = ({ children }: LayoutProps) => {
                     <Sun className="h-6 w-6" />
                   )}
                 </Button>
-                
-                {user && (
-                  <Button
-                    variant="outline"
-                    onClick={handleSignOut}
-                    className="flex items-center gap-2"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign Out
-                  </Button>
-                )}
               </div>
             </div>
           </DrawerContent>
