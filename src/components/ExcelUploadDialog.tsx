@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, FileUpIcon, AlertTriangle, HelpCircle, FileSpreadsheet } from 'lucide-react';
+import { Upload, FileUpIcon, AlertTriangle, HelpCircle, FileSpreadsheet, Download } from 'lucide-react';
 
 interface ExcelUploadDialogProps {
   isOpen: boolean;
@@ -20,6 +20,7 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<'idle' | 'uploading' | 'processing' | 'success' | 'error'>('idle');
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -34,6 +35,7 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
       }
       setFile(selectedFile);
       setStatus('idle');
+      setErrorDetails(null);
     }
   };
 
@@ -49,6 +51,7 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
       setUploading(true);
       setStatus('uploading');
       setProgress(10);
+      setErrorDetails(null);
 
       const formData = new FormData();
       formData.append('file', file);
@@ -58,21 +61,21 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
       
       toast.info('Processing your Excel file...');
       
-      const result = await supabase.functions.invoke('process-excel', {
+      const response = await supabase.functions.invoke('process-excel', {
         body: formData,
       });
 
-      if (result.error) {
-        throw new Error(result.error.message);
+      if (response.error) {
+        throw new Error(response.error.message || 'Unknown error occurred');
       }
 
       setProgress(100);
       setStatus('success');
       
-      toast.success(`Excel file processed successfully! ${result.data.processed} records imported.`);
+      toast.success(`Excel file processed successfully! ${response.data.processed} records imported.`);
       
-      if (result.data.failed > 0) {
-        toast.warning(`${result.data.failed} records failed to import.`);
+      if (response.data.failed > 0) {
+        toast.warning(`${response.data.failed} records failed to import.`);
       }
       
       setTimeout(() => {
@@ -84,7 +87,29 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
     } catch (error) {
       console.error('Error uploading file:', error);
       setStatus('error');
-      toast.error(`Upload failed: ${error.message}`);
+      
+      // Try to extract more detailed error message if available
+      let errorMessage = 'Upload failed';
+      
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Check if we have a JSON response with more details
+      try {
+        if (typeof error.message === 'string' && error.message.includes('{')) {
+          const jsonStr = error.message.substring(error.message.indexOf('{'));
+          const errorData = JSON.parse(jsonStr);
+          if (errorData.error) {
+            errorMessage = errorData.error;
+            setErrorDetails(errorData.message || null);
+          }
+        }
+      } catch (e) {
+        // Ignore JSON parsing errors
+      }
+      
+      toast.error(`Upload failed: ${errorMessage}`);
     } finally {
       setUploading(false);
     }
@@ -95,6 +120,45 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
     setProgress(0);
     setStatus('idle');
     setUploading(false);
+    setErrorDetails(null);
+  };
+  
+  const downloadTemplate = () => {
+    // Create a sample Excel file with the correct columns
+    const data = [
+      ['No.', 'Name', 'Surname', 'Room Pref', 'Dietary', 'Paid'],
+      ['1', 'Jane', 'Doe', 'Double Room', 'Vegetarian', 'Yes'],
+      ['2', 'Mary', 'Smith', 'Single Room', 'None', 'No']
+    ];
+    
+    try {
+      // Create workbook and worksheet
+      const XLSX = require('xlsx');
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Attendees");
+      
+      // Generate and download file
+      XLSX.writeFile(wb, "attendees_template.xlsx");
+      
+      toast.success('Template downloaded successfully');
+    } catch (error) {
+      console.error('Error generating template:', error);
+      
+      // Fallback method - create CSV and trigger download
+      const csvContent = data.map(row => row.join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'attendees_template.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Template downloaded as CSV (Excel format not available)');
+    }
   };
 
   return (
@@ -136,14 +200,23 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
                 <ul className="list-disc pl-5 text-muted-foreground space-y-1">
                   <li>Be in .xlsx or .xls format</li>
                   <li>Have the first row as column headers</li>
-                  <li>Include these <strong>exact</strong> column headers:</li>
+                  <li>Include these column headers (or similar variations):</li>
                 </ul>
                 <div className="mt-2 mb-1 bg-muted p-2 rounded font-mono text-xs">
                   No. | Name | Surname | Room Pref | Dietary | Paid
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  <strong>Important:</strong> The column names must match exactly as shown above (including capitalization and spacing).
-                </p>
+                <div className="mt-3 flex justify-center">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={downloadTemplate}
+                    className="text-xs"
+                  >
+                    <Download className="h-3 w-3 mr-1" />
+                    Download Template
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -161,9 +234,14 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
           )}
 
           {status === 'error' && (
-            <div className="bg-destructive/20 text-destructive flex items-center gap-2 p-2 rounded border border-destructive/50">
-              <AlertTriangle className="h-4 w-4" />
-              <span className="text-sm">An error occurred while processing the file.</span>
+            <div className="bg-destructive/20 text-destructive flex items-start gap-2 p-3 rounded border border-destructive/50">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              <div>
+                <span className="text-sm font-medium">An error occurred while processing the file.</span>
+                {errorDetails && (
+                  <p className="text-xs mt-1">{errorDetails}</p>
+                )}
+              </div>
             </div>
           )}
 

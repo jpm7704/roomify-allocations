@@ -55,10 +55,22 @@ serve(async (req) => {
         );
       }
 
-      // Process Excel file - ensuring we properly handle xlsx format
+      // Process Excel file
+      console.log("Reading Excel file");
       const arrayBuffer = await file.arrayBuffer();
-      // Set the type to 'array' which works better for binary data
-      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      
+      // Handle different Excel formats
+      let workbook;
+      try {
+        workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      } catch (xlsxError) {
+        console.error("XLSX parsing error:", xlsxError);
+        await updateImportStatus(supabase, importRecord.id, 'failed', `Failed to parse Excel file: ${xlsxError.message}`);
+        return new Response(
+          JSON.stringify({ error: `Failed to parse Excel file: ${xlsxError.message}` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       
       // Verify we have at least one sheet
       if (!workbook.SheetNames.length) {
@@ -73,7 +85,7 @@ serve(async (req) => {
       const worksheet = workbook.Sheets[sheetName];
       
       // Convert to JSON with header: 1 to get an array with the first row as headers
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
       
       console.log(`Raw data from Excel: ${jsonData.length} rows`);
       
@@ -85,34 +97,58 @@ serve(async (req) => {
         );
       }
 
-      // Extract header row and validate expected columns
-      const headers = jsonData[0];
-      console.log("Headers found:", headers);
+      // Extract header row and check if required columns exist
+      // This is a more flexible approach that normalizes the headers
+      let headerRow = jsonData[0];
+      console.log("Original headers:", headerRow);
       
-      // Define expected column headers
-      const expectedHeaders = ["No.", "Name", "Surname", "Room Pref", "Dietary", "Paid"];
+      // Normalize headers - convert to string and trim whitespace
+      headerRow = headerRow.map(h => String(h).trim());
+      console.log("Normalized headers:", headerRow);
       
-      // Check if all expected headers exist
-      const missingHeaders = expectedHeaders.filter(header => !headers.includes(header));
-      if (missingHeaders.length > 0) {
-        const errorMessage = `Missing required columns: ${missingHeaders.join(", ")}`;
-        console.error(errorMessage);
-        await updateImportStatus(supabase, importRecord.id, 'failed', errorMessage);
-        return new Response(
-          JSON.stringify({ error: errorMessage }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+      // Define expected column headers and their variations/aliases
+      const requiredColumns = {
+        "No.": ["No.", "No", "#", "Number", "ID"],
+        "Name": ["Name", "First Name", "FirstName", "Given Name"],
+        "Surname": ["Surname", "Last Name", "LastName", "Family Name"],
+        "Room Pref": ["Room Pref", "Room", "Room Preference", "Accommodation", "Room Type"],
+        "Dietary": ["Dietary", "Diet", "Dietary Requirements", "Food Requirements", "Special Needs"],
+        "Paid": ["Paid", "Payment", "Payment Status", "Fee Paid", "Has Paid"]
+      };
       
-      // Create a mapping of column indices
+      // Check for each required column and find its index
       const columnIndices = {};
-      headers.forEach((header, index) => {
-        if (typeof header === 'string') {
-          columnIndices[header.trim()] = index;
+      const missingColumns = [];
+      
+      Object.keys(requiredColumns).forEach(requiredCol => {
+        const aliases = requiredColumns[requiredCol];
+        const foundIndex = headerRow.findIndex(header => 
+          aliases.some(alias => header.toUpperCase() === alias.toUpperCase())
+        );
+        
+        if (foundIndex >= 0) {
+          columnIndices[requiredCol] = foundIndex;
+        } else {
+          missingColumns.push(requiredCol);
         }
       });
       
-      console.log("Column mappings:", columnIndices);
+      console.log("Column indices:", columnIndices);
+      
+      if (missingColumns.length > 0) {
+        const errorMessage = `Missing required columns: ${missingColumns.join(", ")}`;
+        console.error(errorMessage);
+        await updateImportStatus(supabase, importRecord.id, 'failed', errorMessage);
+        return new Response(
+          JSON.stringify({ 
+            error: errorMessage,
+            message: "Please ensure your Excel file has all the required columns. They can be named exactly as listed or use common variations.",
+            requiredColumns: Object.keys(requiredColumns),
+            possibleAliases: requiredColumns
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       
       // Process data rows (skip header)
       const dataRows = jsonData.slice(1);
@@ -127,19 +163,19 @@ serve(async (req) => {
             continue;
           }
           
-          // Extract values based on column indices
-          const number = row[columnIndices["No."]]?.toString() || '';
-          const firstName = row[columnIndices["Name"]]?.toString() || '';
-          const surname = row[columnIndices["Surname"]]?.toString() || '';
-          const roomPref = row[columnIndices["Room Pref"]]?.toString() || '';
-          const dietary = row[columnIndices["Dietary"]]?.toString() || '';
-          const paid = row[columnIndices["Paid"]]?.toString() || '';
+          // Extract values using column indices map
+          const number = row[columnIndices["No."]] !== undefined ? String(row[columnIndices["No."]]).trim() : '';
+          const firstName = row[columnIndices["Name"]] !== undefined ? String(row[columnIndices["Name"]]).trim() : '';
+          const surname = row[columnIndices["Surname"]] !== undefined ? String(row[columnIndices["Surname"]]).trim() : '';
+          const roomPref = row[columnIndices["Room Pref"]] !== undefined ? String(row[columnIndices["Room Pref"]]).trim() : '';
+          const dietary = row[columnIndices["Dietary"]] !== undefined ? String(row[columnIndices["Dietary"]]).trim() : '';
+          const paid = row[columnIndices["Paid"]] !== undefined ? String(row[columnIndices["Paid"]]).trim() : '';
           
           console.log(`Processing row: No=${number}, Name=${firstName}, Surname=${surname}, Room=${roomPref}, Dietary=${dietary}, Paid=${paid}`);
           
           // Validate required fields
           if (!firstName && !surname) {
-            console.error("Missing both first name and surname for row:", JSON.stringify(row));
+            console.log("Missing both first name and surname for row:", JSON.stringify(row));
             failureCount++;
             continue;
           }
@@ -152,7 +188,7 @@ serve(async (req) => {
             name: fullName,
             special_needs: dietary || '',
             department: roomPref || '',
-            home_church: paid === 'Yes' ? 'Paid' : 'Not Paid',
+            home_church: paid === 'Yes' || paid === 'yes' || paid === 'TRUE' || paid === 'true' || paid === '1' ? 'Paid' : 'Not Paid',
             import_source: file.name,
             imported_at: new Date().toISOString(),
           };
