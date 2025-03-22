@@ -47,9 +47,9 @@ const PersonCard = ({ person, onEdit, onDelete, onAssign, onClick }: PersonCardP
     <Card 
       className={cn(
         "overflow-hidden transition-all duration-500 ease-in-out item-transition",
-        "bg-card/60 backdrop-blur-md border-border/30 shadow-sm",
-        "hover:shadow-md hover:border-primary/20 group",
-        isHovered && "ring-1 ring-primary/20"
+        "bg-card/80 backdrop-blur-md border-maroon-300/40 shadow-sm",
+        "hover:shadow-md hover:border-maroon-400/40 group",
+        isHovered && "ring-1 ring-maroon-500/30"
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -60,14 +60,14 @@ const PersonCard = ({ person, onEdit, onDelete, onAssign, onClick }: PersonCardP
         isMobile ? "p-4" : "p-6"
       )}>
         <div className="flex items-center space-x-3 sm:space-x-4">
-          <Avatar className={cn("border transition-all duration-500 ease-in-out group-hover:border-primary", 
+          <Avatar className={cn("border transition-all duration-500 ease-in-out group-hover:border-maroon-500", 
             isMobile ? "h-10 w-10" : "h-12 w-12")}>
             <AvatarImage src={person.avatar} />
-            <AvatarFallback className="bg-primary/10 text-primary">{getInitials(person.name)}</AvatarFallback>
+            <AvatarFallback className="bg-maroon-200 text-maroon-800">{getInitials(person.name)}</AvatarFallback>
           </Avatar>
           
           <div>
-            <h3 className="font-medium text-sm sm:text-base transition-colors duration-500 ease-in-out group-hover:text-primary">{person.name}</h3>
+            <h3 className="font-medium text-sm sm:text-base transition-colors duration-500 ease-in-out group-hover:text-maroon-700">{person.name}</h3>
             <p className="text-xs sm:text-sm text-muted-foreground">{person.email}</p>
           </div>
         </div>
@@ -99,15 +99,15 @@ const PersonCard = ({ person, onEdit, onDelete, onAssign, onClick }: PersonCardP
         isMobile ? "px-4" : "px-6"
       )}>
         {person.department && (
-          <Badge variant="outline" className="mb-3 ios-badge text-xs">
+          <Badge variant="maroon" className="mb-3 ios-badge text-xs">
             {person.department}
           </Badge>
         )}
         
         {isAssigned ? (
           <div className="flex items-center text-xs sm:text-sm mt-2">
-            <Home className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-muted-foreground" />
-            <span>Assigned to <span className="font-medium">{person.roomName}</span></span>
+            <Home className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-peach-600" />
+            <span>Assigned to <span className="font-medium text-maroon-700">{person.roomName}</span></span>
           </div>
         ) : (
           <p className="text-xs sm:text-sm text-muted-foreground mt-2">Not assigned to any room</p>
@@ -115,12 +115,12 @@ const PersonCard = ({ person, onEdit, onDelete, onAssign, onClick }: PersonCardP
       </CardContent>
       
       <CardFooter className={cn(
-        "bg-muted/30 backdrop-blur-sm flex justify-end border-t border-border/20",
+        "bg-peach-100/50 backdrop-blur-sm flex justify-end border-t border-maroon-200/30",
         isMobile ? "px-4 py-3" : "px-6 py-4"
       )}>
         <Button 
           size={isMobile ? "sm" : "default"}
-          variant={!isAssigned ? "default" : "outline"}
+          variant={!isAssigned ? "maroon" : "outline"}
           className="transition-all duration-500 ease-in-out rounded-full ios-button text-xs sm:text-sm"
           onClick={(e) => { e.stopPropagation(); onAssign?.(person); }}
         >
