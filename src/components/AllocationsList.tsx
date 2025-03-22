@@ -1,11 +1,12 @@
-
-import { Loader2, Users, Building, Plus } from 'lucide-react';
+import { Loader2, Users, Building, Plus, SendHorizontal } from 'lucide-react';
 import RoomAllocationCard from '@/components/RoomAllocationCard';
 import { Button } from '@/components/ui/button';
 import { Room } from '@/components/RoomCard';
 import { Person } from '@/components/PersonCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useState } from 'react';
+import SMSNotificationDialog from '@/components/SMSNotificationDialog';
 
 export interface RoomWithOccupants {
   room: Room;
@@ -34,6 +35,19 @@ const AllocationsList = ({
   hasRooms
 }: AllocationsListProps) => {
   const isMobile = useIsMobile();
+  const [isSMSDialogOpen, setIsSMSDialogOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<RoomWithOccupants | null>(null);
+  
+  const handleSendSMS = (roomAllocation: RoomWithOccupants) => {
+    setSelectedRoom(roomAllocation);
+    setIsSMSDialogOpen(true);
+  };
+
+  const handleSendAllSMS = () => {
+    const allOccupants = roomAllocations.flatMap(room => room.occupants);
+    setSelectedRoom({ room: { id: 'all', name: 'All Rooms', capacity: 0, occupied: 0 }, occupants: allOccupants });
+    setIsSMSDialogOpen(true);
+  };
   
   if (loading) {
     return (
@@ -89,17 +103,44 @@ const AllocationsList = ({
     );
   }
 
+  const totalPeopleAllocated = roomAllocations.reduce((total, room) => total + room.occupants.length, 0);
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-      {roomAllocations.map((roomAllocation) => (
-        <RoomAllocationCard
-          key={roomAllocation.room.id}
-          roomAllocation={roomAllocation}
-          onRemoveOccupant={onRemoveOccupant}
-          onClick={onClick}
+    <>
+      {totalPeopleAllocated > 0 && (
+        <div className="flex justify-end mb-4">
+          <Button 
+            onClick={handleSendAllSMS}
+            variant="outline"
+            className="rounded-full gap-2"
+          >
+            <SendHorizontal className="h-4 w-4" />
+            SMS All ({totalPeopleAllocated})
+          </Button>
+        </div>
+      )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+        {roomAllocations.map((roomAllocation) => (
+          <RoomAllocationCard
+            key={roomAllocation.room.id}
+            roomAllocation={roomAllocation}
+            onRemoveOccupant={onRemoveOccupant}
+            onClick={onClick}
+            onSendSMS={handleSendSMS}
+          />
+        ))}
+      </div>
+      
+      {selectedRoom && (
+        <SMSNotificationDialog 
+          isOpen={isSMSDialogOpen} 
+          onOpenChange={setIsSMSDialogOpen}
+          preselectedRecipients={selectedRoom.occupants}
+          eventName={selectedRoom.room.id === 'all' ? 'all rooms' : selectedRoom.room.name}
         />
-      ))}
-    </div>
+      )}
+    </>
   );
 };
 
