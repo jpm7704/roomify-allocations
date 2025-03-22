@@ -1,13 +1,13 @@
 
 import { useState } from 'react';
-import { Building, User, Trash2, CalendarIcon, FileText } from 'lucide-react';
+import { Building, User, Trash2, CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { RoomWithOccupants } from './AllocationsList';
-import { Person } from './PersonCard';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface RoomAllocationCardProps {
   roomAllocation: RoomWithOccupants;
@@ -17,6 +17,7 @@ interface RoomAllocationCardProps {
 
 const RoomAllocationCard = ({ roomAllocation, onRemoveOccupant, onClick }: RoomAllocationCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const isMobile = useIsMobile();
   const { room, occupants } = roomAllocation;
   
   const getInitials = (name: string) => {
@@ -40,13 +41,14 @@ const RoomAllocationCard = ({ roomAllocation, onRemoveOccupant, onClick }: RoomA
         "overflow-hidden transition-all duration-300 ease-in-out item-transition",
         "bg-card/60 backdrop-blur-md border-border/30 ios-shadow",
         "hover:bg-card/80 hover:shadow-md hover:border-primary/20 group",
-        isHovered && "ring-1 ring-primary/20 scale-[1.01]"
+        isHovered && "ring-1 ring-primary/20",
+        isMobile ? "scale-100" : isHovered && "scale-[1.01]"
       )}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => !isMobile && setIsHovered(true)}
+      onMouseLeave={() => !isMobile && setIsHovered(false)}
       onClick={() => onClick?.(roomAllocation)}
     >
-      <CardHeader className="p-5 pb-3">
+      <CardHeader className="p-4 pb-2 sm:p-5 sm:pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-semibold tracking-tight group-hover:text-primary transition-colors duration-300">{room.name}</CardTitle>
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 border transition-all duration-300 ease-in-out group-hover:border-primary">
@@ -59,7 +61,7 @@ const RoomAllocationCard = ({ roomAllocation, onRemoveOccupant, onClick }: RoomA
         </div>
       </CardHeader>
       
-      <CardContent className="p-5 pt-0">
+      <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
         <div className="mb-3">
           <div className="flex items-center justify-between mb-2">
             <Badge variant="outline" className="bg-background/40 text-xs font-normal">
@@ -100,7 +102,10 @@ const RoomAllocationCard = ({ roomAllocation, onRemoveOccupant, onClick }: RoomA
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="opacity-0 group-hover/item:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full transition-all duration-300 ease-in-out h-6 w-6 p-0"
+                    className={cn(
+                      isMobile ? "opacity-100" : "opacity-0 group-hover/item:opacity-100", 
+                      "text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full transition-all duration-300 ease-in-out h-6 w-6 p-0"
+                    )}
                     onClick={(e) => { 
                       e.stopPropagation(); 
                       onRemoveOccupant?.(room.id, person.id); 

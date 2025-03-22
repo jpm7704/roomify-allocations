@@ -16,10 +16,12 @@ import { useAllocations } from '@/hooks/useAllocations';
 import { useAllocationFormHandlers } from '@/components/allocation/AllocationFormHandlers';
 import { useRoomHandlers } from '@/components/allocation/RoomHandlers';
 import { AllocationFilters } from '@/components/allocation/AllocationFilters';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Allocations = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const roomIdFromUrl = searchParams.get('roomId');
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -160,18 +162,18 @@ const Allocations = () => {
       <div className="page-container">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Room Allocations</h1>
-            <p className="text-muted-foreground mt-1">
-              SDA Women's Ministry Camp Meeting - Harare City Centre Church
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Room Allocations</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              SDA Women's Ministry Camp Meeting
             </p>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" className="rounded-md" onClick={handleCreateRoom}>
+          <div className="flex flex-wrap sm:flex-nowrap gap-2">
+            <Button variant="outline" className="rounded-md w-full sm:w-auto" onClick={handleCreateRoom}>
               <Building className="mr-2 h-4 w-4" />
               Add Room
             </Button>
-            <Button className="rounded-md" onClick={handleCreateAllocation}>
+            <Button className="rounded-md w-full sm:w-auto" onClick={handleCreateAllocation}>
               <Plus className="mr-2 h-4 w-4" />
               New Allocation
             </Button>
