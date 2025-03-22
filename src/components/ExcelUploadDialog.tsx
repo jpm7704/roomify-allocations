@@ -129,14 +129,14 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
               <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div className="text-sm">
                 <p className="font-medium mb-1">Expected Excel Format</p>
-                <p className="text-muted-foreground mb-2">Your Excel file should have the following columns:</p>
+                <p className="text-muted-foreground mb-2">Your Excel file must have the following columns in the first row:</p>
                 <ul className="list-disc pl-5 text-muted-foreground space-y-1">
-                  <li>No. - Attendee number</li>
-                  <li>Name - First name</li>
-                  <li>Surname - Last name</li>
-                  <li>Room Pref - Room preference</li>
-                  <li>Dietary - Dietary requirements</li>
-                  <li>Paid - Payment status (Yes/No)</li>
+                  <li><strong>No.</strong> - Attendee number</li>
+                  <li><strong>Name</strong> - First name</li>
+                  <li><strong>Surname</strong> - Last name</li>
+                  <li><strong>Room Pref</strong> - Room preference</li>
+                  <li><strong>Dietary</strong> - Dietary requirements</li>
+                  <li><strong>Paid</strong> - Payment status (Yes/No)</li>
                 </ul>
               </div>
             </div>

@@ -58,11 +58,11 @@ serve(async (req) => {
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-      const rawData = XLSX.utils.sheet_to_json(worksheet);
+      const rawData = XLSX.utils.sheet_to_json(worksheet, { header: "A" });
 
       console.log(`Processing ${rawData.length} rows from Excel file`);
 
-      if (rawData.length === 0) {
+      if (rawData.length <= 1) { // Account for header row
         await updateImportStatus(supabase, importRecord.id, 'failed', 'No data found in Excel file');
         return new Response(
           JSON.stringify({ error: 'No data found in Excel file' }),
@@ -70,53 +70,61 @@ serve(async (req) => {
         );
       }
 
-      // Log the first row to understand its structure
-      console.log("Sample row from Excel:", JSON.stringify(rawData[0]));
-      
-      // Process data with improved extraction logic
+      // Extract header row to identify column positions
+      const headerRow = rawData[0];
+      console.log("Header row:", JSON.stringify(headerRow));
+
+      // Find column indices
+      const columnMap = {};
+      Object.keys(headerRow).forEach(key => {
+        const value = String(headerRow[key]).trim();
+        columnMap[value] = key;
+      });
+
+      console.log("Column mapping:", JSON.stringify(columnMap));
+
+      // Skip header row for processing
+      const dataRows = rawData.slice(1);
       let successCount = 0;
       let failureCount = 0;
       
-      for (const row of rawData) {
-        // Handle both possible structures - column names might be exact or with variations
-        // Make sure we're checking for the exact columns: No., Name, Surname, Room Pref, Dietary, and Paid
-        const number = row['No.'] !== undefined ? row['No.'] : row['No'] !== undefined ? row['No'] : null;
-        const firstName = row['Name'] !== undefined ? row['Name'] : null;
-        const surname = row['Surname'] !== undefined ? row['Surname'] : null;
-        const roomPref = row['Room Pref'] !== undefined ? row['Room Pref'] : row['RoomPref'] !== undefined ? row['RoomPref'] : null;
-        const dietary = row['Dietary'] !== undefined ? row['Dietary'] : null;
-        const paid = row['Paid'] !== undefined ? row['Paid'] : null;
+      for (const row of dataRows) {
+        // Extract values using column mapping
+        const number = columnMap['No.'] ? row[columnMap['No.']] : null;
+        const firstName = columnMap['Name'] ? row[columnMap['Name']] : null;
+        const surname = columnMap['Surname'] ? row[columnMap['Surname']] : null;
+        const roomPref = columnMap['Room Pref'] ? row[columnMap['Room Pref']] : null;
+        const dietary = columnMap['Dietary'] ? row[columnMap['Dietary']] : null;
+        const paid = columnMap['Paid'] ? row[columnMap['Paid']] : null;
 
-        console.log("Extracted values:", { number, firstName, surname, roomPref, dietary, paid });
+        console.log(`Row data for ${number}:`, JSON.stringify({ firstName, surname, roomPref, dietary, paid }));
         
-        // Create full name from first name and surname
-        const fullName = firstName && surname 
-          ? `${firstName} ${surname}`.trim() 
-          : firstName 
-            ? firstName.trim() 
-            : surname 
-              ? surname.trim() 
-              : null;
+        // Create full name - ensure we have at least one name component
+        let fullName = null;
+        if (firstName && surname) {
+          fullName = `${firstName} ${surname}`.trim();
+        } else if (firstName) {
+          fullName = String(firstName).trim();
+        } else if (surname) {
+          fullName = String(surname).trim();
+        }
         
         if (!fullName) {
           console.error("Missing required name field in row:", JSON.stringify(row));
           failureCount++;
-          continue; // Skip this row if name is missing
+          continue;
         }
         
         const person = {
           name: fullName,
-          // Using special_needs for dietary requirements
-          special_needs: dietary || '',
-          // Store room preference in department field
-          department: roomPref || '',
-          // Store payment status in home_church field
+          special_needs: dietary ? String(dietary) : '',
+          department: roomPref ? String(roomPref) : '',
           home_church: paid === 'Yes' ? 'Paid' : 'Not Paid',
           import_source: file.name,
           imported_at: new Date().toISOString(),
         };
         
-        console.log("Inserting person:", JSON.stringify(person));
+        console.log(`Inserting person: ${fullName}`, JSON.stringify(person));
         
         // Insert person record
         const { error: insertError } = await supabase
@@ -124,7 +132,7 @@ serve(async (req) => {
           .insert(person);
 
         if (insertError) {
-          console.error('Error inserting person:', insertError, "Person data:", JSON.stringify(person));
+          console.error(`Error inserting person ${fullName}:`, insertError);
           failureCount++;
         } else {
           successCount++;
