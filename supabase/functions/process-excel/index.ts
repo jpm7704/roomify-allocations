@@ -73,21 +73,30 @@ serve(async (req) => {
       // Log the first row to understand its structure
       console.log("Sample row from Excel:", JSON.stringify(rawData[0]));
       
-      // Process data specifically for the known columns: No., Name, Surname, Room Pref, Dietary, and Paid
+      // Process data with improved extraction logic
       let successCount = 0;
       let failureCount = 0;
       
       for (const row of rawData) {
-        // Extract fields from the specific columns
-        const number = row['No.'] || '';
-        const firstName = row['Name'] || '';
-        const surname = row['Surname'] || '';
-        const roomPref = row['Room Pref'] || '';
-        const dietary = row['Dietary'] || '';
-        const paid = row['Paid'] || '';
+        // Handle both possible structures - column names might be exact or with variations
+        // Make sure we're checking for the exact columns: No., Name, Surname, Room Pref, Dietary, and Paid
+        const number = row['No.'] !== undefined ? row['No.'] : row['No'] !== undefined ? row['No'] : null;
+        const firstName = row['Name'] !== undefined ? row['Name'] : null;
+        const surname = row['Surname'] !== undefined ? row['Surname'] : null;
+        const roomPref = row['Room Pref'] !== undefined ? row['Room Pref'] : row['RoomPref'] !== undefined ? row['RoomPref'] : null;
+        const dietary = row['Dietary'] !== undefined ? row['Dietary'] : null;
+        const paid = row['Paid'] !== undefined ? row['Paid'] : null;
+
+        console.log("Extracted values:", { number, firstName, surname, roomPref, dietary, paid });
         
         // Create full name from first name and surname
-        const fullName = `${firstName} ${surname}`.trim();
+        const fullName = firstName && surname 
+          ? `${firstName} ${surname}`.trim() 
+          : firstName 
+            ? firstName.trim() 
+            : surname 
+              ? surname.trim() 
+              : null;
         
         if (!fullName) {
           console.error("Missing required name field in row:", JSON.stringify(row));
@@ -98,14 +107,16 @@ serve(async (req) => {
         const person = {
           name: fullName,
           // Using special_needs for dietary requirements
-          special_needs: dietary,
-          // Store room preference in department field temporarily
-          department: roomPref,
-          // Store payment status in home_church field temporarily 
+          special_needs: dietary || '',
+          // Store room preference in department field
+          department: roomPref || '',
+          // Store payment status in home_church field
           home_church: paid === 'Yes' ? 'Paid' : 'Not Paid',
           import_source: file.name,
           imported_at: new Date().toISOString(),
         };
+        
+        console.log("Inserting person:", JSON.stringify(person));
         
         // Insert person record
         const { error: insertError } = await supabase
