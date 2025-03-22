@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, FileUpIcon, AlertTriangle } from 'lucide-react';
+import { Upload, FileUpIcon, AlertTriangle, HelpCircle } from 'lucide-react';
 
 interface ExcelUploadDialogProps {
   isOpen: boolean;
@@ -122,6 +122,24 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
                 Selected: {file.name} ({(file.size / 1024).toFixed(1)} KB)
               </p>
             )}
+          </div>
+
+          <div className="bg-muted/50 p-3 rounded-md border">
+            <div className="flex items-start gap-2">
+              <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium mb-1">Expected Excel Format</p>
+                <p className="text-muted-foreground mb-2">Your Excel file should have the following columns:</p>
+                <ul className="list-disc pl-5 text-muted-foreground space-y-1">
+                  <li>No. - Attendee number</li>
+                  <li>Name - First name</li>
+                  <li>Surname - Last name</li>
+                  <li>Room Pref - Room preference</li>
+                  <li>Dietary - Dietary requirements</li>
+                  <li>Paid - Payment status (Yes/No)</li>
+                </ul>
+              </div>
+            </div>
           </div>
 
           {(status === 'uploading' || status === 'processing') && (

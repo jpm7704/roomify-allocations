@@ -70,36 +70,50 @@ serve(async (req) => {
         );
       }
 
-      // Process data using basic extraction logic
-      const processedData = rawData.map(row => ({
-        name: extractFieldValue(row, ['name', 'Name', 'full name', 'Full Name']),
-        email: extractFieldValue(row, ['email', 'Email', 'email address', 'Email Address'])?.toLowerCase(),
-        phone: extractFieldValue(row, ['phone', 'Phone', 'phone number', 'Phone Number', 'contact', 'Contact']),
-        department: extractFieldValue(row, ['department', 'Department', 'dept', 'Dept']),
-        home_church: extractFieldValue(row, ['church', 'Church', 'home church', 'Home Church']),
-        special_needs: extractFieldValue(row, ['special needs', 'Special Needs', 'requirements', 'Requirements'])
-      }));
+      // Log the first row to understand its structure
+      console.log("Sample row from Excel:", JSON.stringify(rawData[0]));
       
+      // Process data specifically for the known columns: No., Name, Surname, Room Pref, Dietary, and Paid
       let successCount = 0;
       let failureCount = 0;
-
-      // Insert processed data into database
-      for (const person of processedData) {
+      
+      for (const row of rawData) {
+        // Extract fields from the specific columns
+        const number = row['No.'] || '';
+        const firstName = row['Name'] || '';
+        const surname = row['Surname'] || '';
+        const roomPref = row['Room Pref'] || '';
+        const dietary = row['Dietary'] || '';
+        const paid = row['Paid'] || '';
+        
+        // Create full name from first name and surname
+        const fullName = `${firstName} ${surname}`.trim();
+        
+        if (!fullName) {
+          console.error("Missing required name field in row:", JSON.stringify(row));
+          failureCount++;
+          continue; // Skip this row if name is missing
+        }
+        
+        const person = {
+          name: fullName,
+          // Using special_needs for dietary requirements
+          special_needs: dietary,
+          // Store room preference in department field temporarily
+          department: roomPref,
+          // Store payment status in home_church field temporarily 
+          home_church: paid === 'Yes' ? 'Paid' : 'Not Paid',
+          import_source: file.name,
+          imported_at: new Date().toISOString(),
+        };
+        
+        // Insert person record
         const { error: insertError } = await supabase
           .from('women_attendees')
-          .insert({
-            name: person.name,
-            email: person.email,
-            phone: person.phone,
-            department: person.department,
-            home_church: person.home_church,
-            special_needs: person.special_needs,
-            import_source: file.name,
-            imported_at: new Date().toISOString(),
-          });
+          .insert(person);
 
         if (insertError) {
-          console.error('Error inserting person:', insertError);
+          console.error('Error inserting person:', insertError, "Person data:", JSON.stringify(person));
           failureCount++;
         } else {
           successCount++;
@@ -110,7 +124,9 @@ serve(async (req) => {
       await updateImportStatus(
         supabase, 
         importRecord.id, 
-        failureCount > 0 ? 'completed_with_errors' : 'completed',
+        failureCount > 0 
+          ? (successCount > 0 ? 'completed_with_errors' : 'failed') 
+          : 'completed',
         null,
         successCount,
         failureCount
@@ -167,13 +183,4 @@ async function updateImportStatus(supabase, importId, status, errorMessage = nul
   if (error) {
     console.error('Error updating import status:', error);
   }
-}
-
-function extractFieldValue(row, possibleFields) {
-  for (const field of possibleFields) {
-    if (row[field] !== undefined) {
-      return row[field];
-    }
-  }
-  return null;
 }
