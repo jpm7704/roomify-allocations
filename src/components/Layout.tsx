@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Moon, Sun, X } from 'lucide-react';
+import { Moon, Sun, X, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Sidebar from './layout/Sidebar';
 import MobileHeader from './layout/MobileHeader';
 import { Drawer, DrawerContent } from './ui/drawer';
 import { Button } from './ui/button';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,6 +17,7 @@ const Layout = ({ children }: LayoutProps) => {
   const [navOpen, setNavOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const { user } = useAuth();
   
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
@@ -48,14 +51,14 @@ const Layout = ({ children }: LayoutProps) => {
       <img 
         src="/lovable-uploads/d33adaab-fb15-4c72-942c-bfeeb00ae13f.png" 
         alt="Home" 
-        className={`w-7 h-7 ${theme === 'dark' ? 'brightness-0' : 'brightness-0'}`}
+        className="w-7 h-7 brightness-0"
       />
     </div>, label: 'Home' },
     { to: '/rooms', icon: <div className={`flex items-center justify-center rounded-full w-10 h-10 ${theme === 'dark' ? 'bg-peach-200' : 'bg-primary/20'}`}>
       <img 
         src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
         alt="Rooms" 
-        className={`w-7 h-7 ${theme === 'dark' ? 'brightness-0' : 'brightness-0'}`} 
+        className="w-7 h-7 brightness-0"
       />
     </div>, label: 'Rooms' },
     { to: '/people', icon: <div className={`flex items-center justify-center rounded-full w-10 h-10 ${theme === 'dark' ? 'bg-peach-200' : 'bg-primary/20'}`}>
@@ -72,6 +75,9 @@ const Layout = ({ children }: LayoutProps) => {
         className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
       />
     </div>, label: 'Allocations' },
+    { to: '/profile', icon: <div className={`flex items-center justify-center rounded-full w-10 h-10 ${theme === 'dark' ? 'bg-peach-200' : 'bg-primary/20'}`}>
+      <UserCircle className={`w-7 h-7 ${theme === 'dark' ? 'text-black' : 'text-black'}`} />
+    </div>, label: 'Profile' },
   ];
 
   return (
@@ -110,15 +116,15 @@ const Layout = ({ children }: LayoutProps) => {
             <div className="px-3 overflow-y-auto h-[calc(100%-60px)]">
               <nav className="flex-1 py-4 space-y-3">
                 {navItems.map((item) => (
-                  <a
+                  <Link
                     key={item.to}
-                    href={item.to}
+                    to={item.to}
                     className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-colors"
                     onClick={() => setIsMobileDrawerOpen(false)}
                   >
                     {item.icon}
                     <span className="font-medium">{item.label}</span>
-                  </a>
+                  </Link>
                 ))}
               </nav>
               <div className="pt-4 pb-8 px-4 border-t border-border mt-4">
