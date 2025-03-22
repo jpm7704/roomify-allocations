@@ -1,26 +1,26 @@
-
 import React, { useState, useEffect } from 'react';
-import { Building, Home, UserRound, Users } from 'lucide-react';
+import { Building, Home, Menu, Moon, Sun, UserRound, Users, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Sidebar from './layout/Sidebar';
 import MobileHeader from './layout/MobileHeader';
+import { Drawer, DrawerContent } from './ui/drawer';
+import { Button } from './ui/button';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout = ({ children }: LayoutProps) => {
-  const [navOpen, setNavOpen] = useState(true);
+  const [navOpen, setNavOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   
-  // Load theme preference from localStorage on initial load
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
     if (savedTheme) {
       setTheme(savedTheme);
       document.documentElement.classList.toggle('dark', savedTheme === 'dark');
     } else {
-      // Check system preference
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       setTheme(prefersDark ? 'dark' : 'light');
       document.documentElement.classList.toggle('dark', prefersDark);
@@ -37,6 +37,10 @@ const Layout = ({ children }: LayoutProps) => {
   const toggleNav = () => {
     setNavOpen(!navOpen);
   };
+
+  const closeMobileNav = () => {
+    setIsMobileDrawerOpen(false);
+  };
   
   const navItems = [
     { to: '/', icon: <Home className="w-5 h-5" />, label: 'Home' },
@@ -47,31 +51,74 @@ const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen flex w-full relative z-10">
-      {/* Sidebar */}
-      <Sidebar 
-        navOpen={navOpen} 
-        toggleNav={toggleNav} 
-        theme={theme} 
-        toggleTheme={toggleTheme} 
-        navItems={navItems} 
-      />
-      
-      {/* Mobile overlay */}
-      {navOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-10 sm:hidden transition-opacity duration-500 ease-in-out" 
-          onClick={() => setNavOpen(false)}
+      <div className="hidden sm:block">
+        <Sidebar 
+          navOpen={navOpen} 
+          toggleNav={toggleNav} 
+          theme={theme} 
+          toggleTheme={toggleTheme} 
+          navItems={navItems} 
         />
-      )}
+      </div>
       
-      {/* Mobile header */}
+      <div className="sm:hidden">
+        <Drawer open={isMobileDrawerOpen} onOpenChange={setIsMobileDrawerOpen}>
+          <DrawerContent className="h-[85vh] rounded-t-[24px] px-0 pb-0 pt-4">
+            <div className="flex justify-between items-center px-4 mb-2">
+              <div className="font-bold text-xl flex items-center gap-3">
+                <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
+                  <Building className="w-5 h-5 text-primary" />
+                </div>
+                <span className="text-foreground">Roomify</span>
+              </div>
+              <button 
+                onClick={closeMobileNav}
+                className="rounded-full p-2 hover:bg-muted"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="px-3 overflow-y-auto h-[calc(100%-60px)]">
+              <nav className="flex-1 py-4 space-y-3">
+                {navItems.map((item) => (
+                  <a
+                    key={item.to}
+                    href={item.to}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-colors"
+                    onClick={() => setIsMobileDrawerOpen(false)}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      {item.icon}
+                    </div>
+                    <span className="font-medium">{item.label}</span>
+                  </a>
+                ))}
+              </nav>
+              <div className="pt-4 pb-8 px-4 border-t border-border mt-4">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={toggleTheme}
+                  className="rounded-full"
+                >
+                  {theme === 'light' ? (
+                    <Moon className="h-5 w-5" />
+                  ) : (
+                    <Sun className="h-5 w-5" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
+      </div>
+      
       <MobileHeader 
-        setNavOpen={setNavOpen} 
+        openMobileMenu={() => setIsMobileDrawerOpen(true)} 
         theme={theme} 
         toggleTheme={toggleTheme} 
       />
       
-      {/* Main content */}
       <main className={cn(
         "flex-1 transition-all duration-500 ease-in-out relative z-10",
         navOpen ? "sm:ml-64" : "sm:ml-16",

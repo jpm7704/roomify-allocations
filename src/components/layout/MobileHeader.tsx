@@ -4,18 +4,19 @@ import { Building, Menu, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface MobileHeaderProps {
-  setNavOpen: (open: boolean) => void;
+  openMobileMenu: () => void;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
 }
 
-const MobileHeader = ({ setNavOpen, theme, toggleTheme }: MobileHeaderProps) => {
+const MobileHeader = ({ openMobileMenu, theme, toggleTheme }: MobileHeaderProps) => {
   return (
-    <div className="sm:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-10 flex items-center justify-between px-4">
+    <div className="sm:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-20 flex items-center justify-between px-4">
       <Button 
         variant="ghost" 
         size="icon" 
-        onClick={() => setNavOpen(true)}
+        onClick={openMobileMenu}
+        className="h-10 w-10 rounded-full"
       >
         <Menu className="h-5 w-5" />
       </Button>
@@ -27,7 +28,7 @@ const MobileHeader = ({ setNavOpen, theme, toggleTheme }: MobileHeaderProps) => 
         variant="ghost" 
         size="icon" 
         onClick={toggleTheme}
-        className="rounded-full"
+        className="h-10 w-10 rounded-full"
       >
         {theme === 'light' ? (
           <Moon className="h-5 w-5" />
