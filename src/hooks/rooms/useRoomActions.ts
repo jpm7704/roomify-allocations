@@ -1,12 +1,12 @@
 
+import { useState } from 'react';
 import { Room } from '@/components/RoomCard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 export const useRoomActions = (rooms: Room[], setRooms: (rooms: Room[]) => void) => {
-  const navigate = useNavigate();
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const { user } = useAuth();
   
   const handleDeleteRoom = async (roomId: string) => {
@@ -15,56 +15,68 @@ export const useRoomActions = (rooms: Room[], setRooms: (rooms: Room[]) => void)
       return;
     }
     
-    try {
-      const { data: allocations, error: checkError } = await supabase
-        .from('room_allocations')
-        .select('id')
-        .eq('room_id', roomId)
-        .eq('user_id', user.id);
-      
-      if (checkError) throw checkError;
-      
-      if (allocations && allocations.length > 0) {
-        toast.error("Cannot delete accommodation with active allocations");
-        return;
-      }
-      
-      const { error } = await supabase
-        .from('accommodation_rooms')
-        .delete()
-        .eq('id', roomId)
-        .eq('user_id', user.id);
+    if (!roomId) return;
+    
+    if (confirm("Are you sure you want to delete this room? This action cannot be undone.")) {
+      try {
+        // Check if room is part of a chalet group
+        const roomToDelete = rooms.find(r => r.id === roomId);
+        const chaletGroup = roomToDelete?.chaletGroup;
         
-      if (error) throw error;
-      
-      setRooms(rooms.filter(room => room.id !== roomId));
-      toast.success("Accommodation deleted successfully");
-    } catch (error) {
-      console.error("Error deleting room:", error);
-      toast.error("Failed to delete accommodation");
+        // If room is part of a chalet group, ask if user wants to delete all rooms in that chalet
+        let roomsToDelete = [roomId];
+        
+        if (chaletGroup && rooms.filter(r => r.chaletGroup === chaletGroup).length > 1) {
+          if (confirm(`This room is part of ${chaletGroup}. Do you want to delete all rooms in this chalet?`)) {
+            roomsToDelete = rooms
+              .filter(r => r.chaletGroup === chaletGroup)
+              .map(r => r.id);
+          }
+        }
+        
+        // Delete the room(s)
+        const { error } = await supabase
+          .from('accommodation_rooms')
+          .delete()
+          .in('id', roomsToDelete);
+        
+        if (error) throw error;
+        
+        setRooms(rooms.filter(room => !roomsToDelete.includes(room.id)));
+        
+        if (roomsToDelete.length > 1) {
+          toast.success(`${chaletGroup} has been deleted successfully`);
+        } else {
+          toast.success("Room has been deleted successfully");
+        }
+      } catch (error) {
+        console.error("Error deleting room:", error);
+        toast.error("Failed to delete room");
+      }
     }
   };
   
-  const handleEditRoom = async (room: Room) => {
-    toast.info(`Edit ${room.type === 'Personal tent' ? 'tent' : 'room'}: ${room.name}`);
-    // Implement edit functionality
+  const handleEditRoom = (room: Room) => {
+    setSelectedRoom(room);
+    // You would implement additional edit logic here
+    toast.info("Room editing is not yet implemented");
   };
   
   const handleRoomClick = (room: Room) => {
-    toast.info(`Viewing ${room.type === 'Personal tent' ? 'tent' : 'room'}: ${room.name}`);
-    // Implement view room details functionality
+    // You would implement room detail view logic here
+    console.log("Room clicked:", room);
+    toast.info(`Selected ${room.name}`);
   };
   
   const handleAssignRoom = (room: Room) => {
-    if (room.occupied >= room.capacity) {
-      toast.error(`This ${room.type === 'Personal tent' ? 'tent' : 'room'} is already at full capacity`);
-      return;
-    }
-    
-    navigate(`/allocations?roomId=${room.id}`);
+    // You would implement room assignment logic here
+    console.log("Assign to room:", room);
+    toast.info(`Assigning to ${room.name}`);
   };
-
+  
   return {
+    selectedRoom,
+    setSelectedRoom,
     handleDeleteRoom,
     handleEditRoom,
     handleRoomClick,

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Layout from '@/components/Layout';
 import RoomFormDialog from '@/components/RoomFormDialog';
 import useRooms from '@/hooks/useRooms';
@@ -7,6 +7,7 @@ import RoomsHeader from '@/components/rooms/RoomsHeader';
 import RoomsSearch from '@/components/rooms/RoomsSearch';
 import RoomsTabs from '@/components/rooms/RoomsTabs';
 import RoomsList from '@/components/rooms/RoomsList';
+import { Room } from '@/components/RoomCard';
 
 const Rooms = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,18 +32,22 @@ const Rooms = () => {
     setIsRoomDialogOpen(false);
   };
   
-  const filteredRooms = rooms.filter(room => {
-    const matchesSearch = 
-      room.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      room.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      room.type?.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredRooms = useMemo(() => {
+    return rooms.filter(room => {
+      const matchesSearch = 
+        room.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        room.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        room.type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        room.chaletGroup?.toLowerCase().includes(searchQuery.toLowerCase());
+        
+      // Filter by tab type
+      if (activeTab === 'all') return matchesSearch;
+      if (activeTab === 'chalets') return matchesSearch && (room.type === 'Chalet' || !room.type);
+      if (activeTab === 'tents') return matchesSearch && room.type === 'Personal tent';
       
-    if (activeTab === 'all') return matchesSearch;
-    if (activeTab === 'available') return matchesSearch && room.occupied < room.capacity;
-    if (activeTab === 'full') return matchesSearch && room.occupied === room.capacity;
-    
-    return matchesSearch;
-  });
+      return matchesSearch;
+    });
+  }, [rooms, searchQuery, activeTab]);
 
   return (
     <Layout>

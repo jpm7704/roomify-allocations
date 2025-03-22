@@ -3,6 +3,7 @@ import React from 'react';
 import { Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import RoomCard, { Room } from '@/components/RoomCard';
+import ChaletCard from './ChaletCard';
 
 interface RoomsListProps {
   loading: boolean;
@@ -51,9 +52,48 @@ const RoomsList = ({
     );
   }
 
+  // Group rooms by chalet
+  const chaletGroups: { [key: string]: Room[] } = {};
+  const individualRooms: Room[] = [];
+
+  filteredRooms.forEach(room => {
+    if (room.chaletGroup) {
+      if (!chaletGroups[room.chaletGroup]) {
+        chaletGroups[room.chaletGroup] = [];
+      }
+      chaletGroups[room.chaletGroup].push(room);
+    } else {
+      individualRooms.push(room);
+    }
+  });
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {filteredRooms.map((room) => (
+      {/* Display chalet groups first */}
+      {Object.keys(chaletGroups).map(chaletName => (
+        <ChaletCard
+          key={chaletName}
+          chaletName={chaletName}
+          rooms={chaletGroups[chaletName]}
+          onEdit={(chaletName, rooms) => {
+            // For simplicity, just edit the first room for now
+            if (rooms.length > 0) {
+              onEdit(rooms[0]);
+            }
+          }}
+          onDelete={(chaletName, roomIds) => {
+            // For simplicity, just delete the first room ID for now
+            if (roomIds.length > 0) {
+              onDelete(roomIds[0]);
+            }
+          }}
+          onClick={onClick}
+          onAssign={onAssign}
+        />
+      ))}
+      
+      {/* Display individual rooms */}
+      {individualRooms.map((room) => (
         <RoomCard
           key={room.id}
           room={room}
