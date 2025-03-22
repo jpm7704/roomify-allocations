@@ -36,7 +36,10 @@ export const useFetchRooms = () => {
         capacity: room.capacity,
         occupied: room.occupied || 0,
         description: room.description,
-        type: room.type || 'Chalet'
+        type: room.type || 'Chalet',
+        bedType: room.bed_type || 'single',
+        bedCount: room.bed_count || 1,
+        chaletGroup: room.chalet_group
       })) || [];
 
       setRooms(formattedRooms);

@@ -11,8 +11,11 @@ export type Database = {
     Tables: {
       accommodation_rooms: {
         Row: {
+          bed_count: number | null
+          bed_type: string | null
           building: string | null
           capacity: number
+          chalet_group: string | null
           created_at: string | null
           description: string | null
           floor: string | null
@@ -23,8 +26,11 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          bed_count?: number | null
+          bed_type?: string | null
           building?: string | null
           capacity: number
+          chalet_group?: string | null
           created_at?: string | null
           description?: string | null
           floor?: string | null
@@ -35,8 +41,11 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          bed_count?: number | null
+          bed_type?: string | null
           building?: string | null
           capacity?: number
+          chalet_group?: string | null
           created_at?: string | null
           description?: string | null
           floor?: string | null
