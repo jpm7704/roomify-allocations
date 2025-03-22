@@ -48,14 +48,14 @@ const Layout = ({ children }: LayoutProps) => {
       <img 
         src="/lovable-uploads/d33adaab-fb15-4c72-942c-bfeeb00ae13f.png" 
         alt="Home" 
-        className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
+        className={`w-7 h-7 ${theme === 'dark' ? 'brightness-0' : 'brightness-0'}`}
       />
     </div>, label: 'Home' },
     { to: '/rooms', icon: <div className={`flex items-center justify-center rounded-full w-10 h-10 ${theme === 'dark' ? 'bg-peach-200' : 'bg-primary/20'}`}>
       <img 
         src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
         alt="Rooms" 
-        className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`} 
+        className={`w-7 h-7 ${theme === 'dark' ? 'brightness-0' : 'brightness-0'}`} 
       />
     </div>, label: 'Rooms' },
     { to: '/people', icon: <div className={`flex items-center justify-center rounded-full w-10 h-10 ${theme === 'dark' ? 'bg-peach-200' : 'bg-primary/20'}`}>
