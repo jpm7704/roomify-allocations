@@ -1,13 +1,14 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import { ChevronLeft } from 'lucide-react';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -48,6 +49,10 @@ const Auth = () => {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-background to-background/80 px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
+          <Link to="/" className="inline-flex items-center mb-4 text-primary hover:underline">
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            Back to Homepage
+          </Link>
           <div className="flex justify-center mb-2">
             <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
               <img 
