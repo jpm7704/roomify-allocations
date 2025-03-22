@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, FileUpIcon, AlertTriangle, WifiIcon } from 'lucide-react';
+import { Upload, FileUpIcon, AlertTriangle, WifiIcon, KeyIcon } from 'lucide-react';
 
 interface ExcelUploadDialogProps {
   isOpen: boolean;
@@ -19,6 +20,8 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<'idle' | 'uploading' | 'processing' | 'success' | 'error' | 'testing'>('idle');
+  const [apiKey, setApiKey] = useState('');
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -48,6 +51,11 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
 
       const formData = new FormData();
       formData.append('file', file);
+      
+      // If manual API key is provided, add it to the request
+      if (apiKey.trim()) {
+        formData.append('apiKey', apiKey.trim());
+      }
       
       setProgress(30);
       setStatus('processing');
@@ -91,6 +99,7 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
     setProgress(0);
     setStatus('idle');
     setUploading(false);
+    setShowApiKeyInput(false);
   };
 
   const testConnection = async () => {
@@ -98,8 +107,15 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
       setStatus('testing');
       toast.info('Testing connection to Mistral AI...');
       
+      const testBody: any = { action: 'test_connection' };
+      
+      // If manual API key is provided, add it to the test request
+      if (apiKey.trim()) {
+        testBody.apiKey = apiKey.trim();
+      }
+      
       const testResult = await supabase.functions.invoke('process-excel', {
-        body: { action: 'test_connection' },
+        body: testBody,
       });
       
       if (testResult.error) {
@@ -110,10 +126,14 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
         toast.success('Successfully connected to Mistral AI API!');
       } else {
         toast.error(`Connection test failed: ${testResult.data?.message || 'Unknown error'}`);
+        // If connection failed, show the API key input
+        setShowApiKeyInput(true);
       }
     } catch (error) {
       console.error('Error testing connection:', error);
       toast.error(`Connection test failed: ${error.message}`);
+      // If connection failed, show the API key input
+      setShowApiKeyInput(true);
     } finally {
       setStatus('idle');
     }
@@ -149,6 +169,38 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
             )}
           </div>
 
+          {showApiKeyInput && (
+            <div className="grid w-full gap-1.5">
+              <Label htmlFor="apiKey">Mistral AI API Key</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="apiKey"
+                  type="password"
+                  placeholder="Enter your Mistral AI API key"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  disabled={uploading || status === 'testing'}
+                  className="font-mono text-sm"
+                />
+                <Button 
+                  type="button" 
+                  size="icon" 
+                  variant="outline"
+                  onClick={() => setShowApiKeyInput(false)}
+                  disabled={uploading || status === 'testing'}
+                >
+                  <KeyIcon className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                If the server API key isn't working, you can provide your own key here.
+                <a href="https://console.mistral.ai/api-keys/" className="text-primary ml-1" target="_blank" rel="noreferrer">
+                  Get a key
+                </a>
+              </p>
+            </div>
+          )}
+
           {(status === 'uploading' || status === 'processing') && (
             <div className="space-y-2">
               <div className="flex justify-between">
@@ -169,15 +221,27 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
           )}
 
           <div className="flex justify-between gap-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={testConnection}
-              disabled={uploading || status === 'testing'}
-            >
-              <WifiIcon className="mr-2 h-4 w-4" />
-              Test Connection
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={testConnection}
+                disabled={uploading || status === 'testing'}
+              >
+                <WifiIcon className="mr-2 h-4 w-4" />
+                Test Connection
+              </Button>
+              
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowApiKeyInput(!showApiKeyInput)}
+                disabled={uploading || status === 'testing'}
+              >
+                <KeyIcon className="mr-2 h-4 w-4" />
+                {showApiKeyInput ? 'Hide API Key' : 'Enter API Key'}
+              </Button>
+            </div>
             
             <div className="flex gap-2">
               <Button 
