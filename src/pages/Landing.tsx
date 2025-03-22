@@ -51,10 +51,10 @@ const Landing = () => {
               </div>
             </div>
             <h1 className="title-text animate-fade-in text-4xl md:text-5xl font-bold">
-              Room Allocation <span className="text-primary">Management</span>
+              <span className="text-primary">Roomify</span>
             </h1>
             <p className="subtitle-text animate-fade-in opacity-90 max-w-2xl mx-auto text-lg text-muted-foreground">
-              Efficiently manage room assignments with our intuitive room allocation system. Track occupancy, manage people, and organize spaces with ease.
+              Room Allocation Management - Efficiently manage room assignments with our intuitive room allocation system. Track occupancy, manage people, and organize spaces with ease.
             </p>
             <div className="flex flex-wrap gap-4 justify-center mt-8 animate-fade-in">
               <Button
