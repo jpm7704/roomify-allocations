@@ -62,7 +62,7 @@ const Layout = ({ children }: LayoutProps) => {
       <img 
         src="/lovable-uploads/836f0a81-66af-413a-a8fc-fc8bb7b27059.png" 
         alt="People" 
-        className={`w-7 h-7 ${theme === 'dark' ? 'brightness-[2.5]' : 'brightness-0'}`}
+        className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`}
       />
     </div>, label: 'People' },
     { to: '/allocations', icon: <div className={`flex items-center justify-center rounded-full w-10 h-10 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
