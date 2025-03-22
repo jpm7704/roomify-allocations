@@ -58,7 +58,7 @@ const Layout = ({ children }: LayoutProps) => {
         className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : 'brightness-0'}`} 
       />
     </div>, label: 'Rooms' },
-    { to: '/people', icon: <div className={`flex items-center justify-center rounded-full w-10 h-10 ${theme === 'light' ? 'bg-primary/20' : ''}`}>
+    { to: '/people', icon: <div className={`flex items-center justify-center rounded-full w-10 h-10 ${theme === 'dark' ? 'bg-peach-200' : 'bg-primary/20'}`}>
       <img 
         src="/lovable-uploads/836f0a81-66af-413a-a8fc-fc8bb7b27059.png" 
         alt="People" 
