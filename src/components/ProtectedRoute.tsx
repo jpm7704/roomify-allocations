@@ -10,7 +10,7 @@ export const ProtectedRoute = () => {
   }
   
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/landing" replace />;
   }
   
   return <Outlet />;

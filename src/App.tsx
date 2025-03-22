@@ -25,11 +25,14 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Landing />} />
+            {/* Public Routes */}
+            <Route path="/landing" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             
+            {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<Index />} />
+              <Route path="/" element={<Index />} /> {/* Dashboard is now the home page */}
+              <Route path="/dashboard" element={<Navigate to="/" replace />} /> {/* Redirect /dashboard to home */}
               <Route path="/rooms" element={<Rooms />} />
               <Route path="/people" element={<People />} />
               <Route path="/allocations" element={<Allocations />} />
