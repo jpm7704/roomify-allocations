@@ -4,6 +4,7 @@ import { Building, User, Trash2, CalendarIcon, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { RoomWithOccupants } from './AllocationsList';
 import { Person } from './PersonCard';
@@ -36,71 +37,76 @@ const RoomAllocationCard = ({ roomAllocation, onRemoveOccupant, onClick }: RoomA
   return (
     <Card 
       className={cn(
-        "overflow-hidden transition-all duration-500 ease-in-out item-transition",
-        "bg-card/60 backdrop-blur-md border-border/30 shadow-sm",
-        "hover:shadow-md hover:border-primary/20 group",
-        isHovered && "ring-1 ring-primary/20"
+        "overflow-hidden transition-all duration-300 ease-in-out item-transition",
+        "bg-card/60 backdrop-blur-md border-border/30 ios-shadow",
+        "hover:bg-card/80 hover:shadow-md hover:border-primary/20 group",
+        isHovered && "ring-1 ring-primary/20 scale-[1.01]"
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onClick?.(roomAllocation)}
     >
-      <CardHeader className="p-6 pb-4">
-        <CardTitle className="flex items-center justify-between">
-          <span className="text-lg font-bold">{room.name}</span>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 border transition-all duration-500 ease-in-out group-hover:border-primary">
+      <CardHeader className="p-5 pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold tracking-tight group-hover:text-primary transition-colors duration-300">{room.name}</CardTitle>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 border transition-all duration-300 ease-in-out group-hover:border-primary">
             <Building className="h-4 w-4 text-primary" />
           </div>
-        </CardTitle>
-        <div className="text-sm text-muted-foreground flex items-center mt-1">
-          <CalendarIcon className="h-4 w-4 mr-2" />
-          Last updated on {formattedDate}
+        </div>
+        <div className="text-xs text-muted-foreground flex items-center mt-1">
+          <CalendarIcon className="h-3 w-3 mr-1.5" />
+          Updated {formattedDate}
         </div>
       </CardHeader>
       
-      <CardContent className="p-6 pt-0">
-        <div className="mb-4">
-          <div className="text-sm font-medium mb-2">Room Details:</div>
-          <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
-            <span>Type:</span>
-            <span className="font-medium">{room.type || 'Chalet'}</span>
-          </div>
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>Capacity:</span>
-            <span className="font-medium">{room.occupied}/{room.capacity} Occupied</span>
+      <CardContent className="p-5 pt-0">
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <Badge variant="outline" className="bg-background/40 text-xs font-normal">
+              {room.type || 'Chalet'}
+            </Badge>
+            <Badge variant={room.occupied === room.capacity ? "peach" : "maroon"} className="text-xs">
+              {room.occupied}/{room.capacity} Occupied
+            </Badge>
           </div>
         </div>
         
-        <div className="mb-4">
-          <div className="text-sm font-medium mb-2">Occupants:</div>
+        <div className="mb-3">
+          <div className="text-xs font-medium mb-2 flex items-center text-muted-foreground">
+            <User className="h-3 w-3 mr-1.5" />
+            Occupants
+          </div>
+          
           {occupants.length === 0 ? (
-            <div className="text-sm text-muted-foreground italic">No occupants assigned yet</div>
+            <div className="text-xs text-muted-foreground italic bg-muted/30 p-2 rounded-lg text-center">No occupants assigned</div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {occupants.map((person) => (
-                <div key={person.id} className="flex items-center justify-between group/item bg-muted/30 p-2 rounded-md">
+                <div key={person.id} className="flex items-center justify-between group/item bg-muted/30 p-2 rounded-lg transition-all duration-300 ease-in-out hover:bg-muted/50">
                   <div className="flex items-center space-x-2">
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="h-7 w-7 border border-border/50">
                       <AvatarFallback className="bg-primary/10 text-primary text-xs">
                         {getInitials(person.name)}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium text-sm">{person.name}</p>
-                      <p className="text-xs text-muted-foreground">{person.department || 'No department'}</p>
+                      <p className="font-medium text-xs">{person.name}</p>
+                      {person.department && (
+                        <p className="text-[10px] text-muted-foreground">{person.department}</p>
+                      )}
                     </div>
                   </div>
                   
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="opacity-0 group-hover/item:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full transition-all duration-300 ease-in-out h-8 w-8 p-0"
+                    className="opacity-0 group-hover/item:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full transition-all duration-300 ease-in-out h-6 w-6 p-0"
                     onClick={(e) => { 
                       e.stopPropagation(); 
                       onRemoveOccupant?.(room.id, person.id); 
                     }}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
               ))}
@@ -108,11 +114,26 @@ const RoomAllocationCard = ({ roomAllocation, onRemoveOccupant, onClick }: RoomA
           )}
         </div>
         
-        <div className="flex items-center">
-          <User className="h-4 w-4 mr-2 text-muted-foreground" />
-          <span className="text-sm">
-            <span className="font-medium">{occupants.length}</span> of {room.capacity} spaces filled
-          </span>
+        <div className="mt-4 pt-3 border-t border-border/40">
+          <div className="w-full bg-muted/40 rounded-full h-1.5 overflow-hidden">
+            <div 
+              className={cn(
+                "h-full rounded-full transition-all duration-500 ease-in-out",
+                room.occupied === 0 ? "w-0 bg-muted-foreground/30" :
+                room.occupied < room.capacity / 2 ? "bg-maroon-400" :
+                room.occupied === room.capacity ? "bg-peach-500" : "bg-maroon-500"
+              )}
+              style={{ width: `${(room.occupied / room.capacity) * 100}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-xs text-muted-foreground">
+              {room.capacity - room.occupied} spaces left
+            </span>
+            <span className="text-xs font-medium">
+              {Math.round((room.occupied / room.capacity) * 100)}% full
+            </span>
+          </div>
         </div>
       </CardContent>
     </Card>

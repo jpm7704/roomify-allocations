@@ -5,44 +5,44 @@
 
 @layer base {
   :root {
-    --background: 25 100% 97%;
-    --foreground: 340 50% 20%;
+    --background: 25 54% 97%;
+    --foreground: 340 20% 30%;
 
-    --card: 25 100% 97%;
-    --card-foreground: 340 50% 20%;
+    --card: 25 54% 97%;
+    --card-foreground: 340 20% 30%;
 
-    --popover: 25 100% 97%;
-    --popover-foreground: 340 50% 20%;
+    --popover: 25 54% 97%;
+    --popover-foreground: 340 20% 30%;
 
-    --primary: 340 80% 40%;
-    --primary-foreground: 25 100% 97%;
+    --primary: 352 68% 68%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 25 80% 90%;
-    --secondary-foreground: 340 50% 30%;
+    --secondary: 15 80% 90%;
+    --secondary-foreground: 340 30% 30%;
 
-    --muted: 25 60% 92%;
-    --muted-foreground: 340 30% 40%;
+    --muted: 25 30% 92%;
+    --muted-foreground: 340 10% 50%;
 
-    --accent: 15 80% 80%;
-    --accent-foreground: 340 60% 20%;
+    --accent: 352 68% 68%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 25 60% 85%;
-    --input: 25 60% 85%;
-    --ring: 340 70% 50%;
+    --border: 25 40% 90%;
+    --input: 25 40% 90%;
+    --ring: 352 68% 68%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 340 50% 20%;
-    --sidebar-foreground: 25 100% 97%;
-    --sidebar-primary: 15 80% 80%;
-    --sidebar-primary-foreground: 340 60% 20%;
-    --sidebar-accent: 340 30% 30%;
-    --sidebar-accent-foreground: 25 100% 95%;
-    --sidebar-border: 340 30% 30%;
-    --sidebar-ring: 15 80% 80%;
+    --sidebar-background: 340 20% 26%;
+    --sidebar-foreground: 25 54% 97%;
+    --sidebar-primary: 15 80% 75%;
+    --sidebar-primary-foreground: 340 20% 26%;
+    --sidebar-accent: 340 20% 36%;
+    --sidebar-accent-foreground: 25 54% 97%;
+    --sidebar-border: 340 20% 36%;
+    --sidebar-ring: 15 80% 75%;
   }
 
   .dark {
@@ -92,7 +92,7 @@
   
   html, body {
     @apply antialiased;
-    font-family: 'Bricolage Grotesque', sans-serif;
+    font-family: 'SF Pro Display', 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, sans-serif;
     margin: 0;
     padding: 0;
     height: 100%;
@@ -135,7 +135,7 @@
   }
   
   .ios-card {
-    @apply rounded-2xl glass;
+    @apply rounded-xl glass;
   }
   
   .ios-button {
@@ -147,15 +147,15 @@
   }
   
   .title-text {
-    @apply text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight;
+    @apply text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight;
   }
   
   .subtitle-text {
-    @apply text-muted-foreground text-lg sm:text-xl md:text-2xl;
+    @apply text-muted-foreground text-lg sm:text-xl;
   }
   
   .section {
-    @apply py-12 md:py-24;
+    @apply py-10 md:py-16;
   }
   
   .page-container {
@@ -167,7 +167,7 @@
   }
   
   .icon-button {
-    @apply h-10 w-10 rounded-full flex items-center justify-center transition-all duration-500 ease-in-out;
+    @apply h-10 w-10 rounded-full flex items-center justify-center transition-all duration-300 ease-in-out;
   }
   
   .page-transition {
@@ -191,10 +191,24 @@
   }
   
   .ios-shadow {
-    @apply shadow-[0_8px_30px_rgb(0,0,0,0.04)];
+    @apply shadow-[0_8px_16px_rgb(0,0,0,0.04)];
   }
   
   .ios-tab {
-    @apply rounded-full transition-all duration-500 ease-in-out;
+    @apply rounded-full transition-all duration-300 ease-in-out;
+  }
+
+  .skeleton {
+    @apply animate-pulse bg-muted/70 rounded-lg;
+  }
+
+  .shimmer {
+    @apply relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
   }
 }
