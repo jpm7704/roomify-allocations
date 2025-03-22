@@ -1,6 +1,7 @@
 
 import { UserRound, Loader2 } from 'lucide-react';
 import PersonCard, { Person } from '@/components/PersonCard';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AttendeeListProps {
   loading: boolean;
@@ -21,6 +22,8 @@ const AttendeeList = ({
   onAssign, 
   onClick 
 }: AttendeeListProps) => {
+  const isMobile = useIsMobile();
+  
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
@@ -43,7 +46,7 @@ const AttendeeList = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6">
       {people.map((person) => (
         <PersonCard
           key={person.id}

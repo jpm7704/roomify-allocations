@@ -33,20 +33,20 @@ const AttendeeTabs = ({
   onClick
 }: AttendeeTabsProps) => {
   return (
-    <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-8">
+    <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-4 sm:mb-8">
       <TabsList className="grid w-full grid-cols-3 sm:w-auto">
-        <TabsTrigger value="all" className="rounded-md">
+        <TabsTrigger value="all" className="rounded-md text-xs sm:text-sm">
           All <span className="ml-1 text-xs opacity-70">({allPeopleCount})</span>
         </TabsTrigger>
-        <TabsTrigger value="assigned" className="rounded-md">
+        <TabsTrigger value="assigned" className="rounded-md text-xs sm:text-sm">
           Assigned <span className="ml-1 text-xs opacity-70">({assignedPeopleCount})</span>
         </TabsTrigger>
-        <TabsTrigger value="unassigned" className="rounded-md">
+        <TabsTrigger value="unassigned" className="rounded-md text-xs sm:text-sm">
           Unassigned <span className="ml-1 text-xs opacity-70">({unassignedPeopleCount})</span>
         </TabsTrigger>
       </TabsList>
       
-      <TabsContent value="all" className="mt-6">
+      <TabsContent value="all" className="mt-4 sm:mt-6">
         <AttendeeList
           loading={loading}
           people={filteredPeople}
@@ -58,7 +58,7 @@ const AttendeeTabs = ({
         />
       </TabsContent>
       
-      <TabsContent value="assigned" className="mt-6">
+      <TabsContent value="assigned" className="mt-4 sm:mt-6">
         <AttendeeList
           loading={loading}
           people={filteredPeople.filter(person => !!person.roomId)}
@@ -70,7 +70,7 @@ const AttendeeTabs = ({
         />
       </TabsContent>
       
-      <TabsContent value="unassigned" className="mt-6">
+      <TabsContent value="unassigned" className="mt-4 sm:mt-6">
         <AttendeeList
           loading={loading}
           people={filteredPeople.filter(person => !person.roomId)}

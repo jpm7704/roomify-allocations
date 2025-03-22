@@ -10,6 +10,7 @@ import AttendeeForm from '@/components/AttendeeForm';
 import AttendeeTabs from '@/components/AttendeeTabs';
 import { useNavigate } from 'react-router-dom';
 import TextImportDialog from '@/components/TextImportDialog';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const People = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,6 +22,7 @@ const People = () => {
   const [currentPerson, setCurrentPerson] = useState<Person | undefined>(undefined);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   const fetchData = async () => {
     setLoading(true);
@@ -138,22 +140,27 @@ const People = () => {
       <div className="page-container">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Women Attendees</h1>
-            <p className="text-muted-foreground mt-1">
-              SDA Women's Ministry Camp Meeting - Harare City Centre Church
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Women Attendees</h1>
+            <p className="text-muted-foreground text-sm sm:text-base mt-1">
+              SDA Women's Ministry Camp Meeting
             </p>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
             <Button 
               variant="outline" 
-              className="rounded-md" 
+              className="rounded-md flex-1 sm:flex-auto" 
               onClick={() => setIsImportOpen(true)}
+              size={isMobile ? "sm" : "default"}
             >
               <FileUp className="mr-2 h-4 w-4" />
-              Import Attendees
+              Import
             </Button>
-            <Button className="rounded-md" onClick={handleOpenAddDialog}>
+            <Button 
+              className="rounded-md flex-1 sm:flex-auto" 
+              onClick={handleOpenAddDialog}
+              size={isMobile ? "sm" : "default"}
+            >
               <UserPlus className="mr-2 h-4 w-4" />
               Add Attendee
             </Button>
