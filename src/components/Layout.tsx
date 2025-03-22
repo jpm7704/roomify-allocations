@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Building, Home, Menu, Moon, Sun, UserRound, Users, X } from 'lucide-react';
+import { Home, Moon, Sun, UserRound, Users, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Sidebar from './layout/Sidebar';
 import MobileHeader from './layout/MobileHeader';
@@ -44,7 +45,11 @@ const Layout = ({ children }: LayoutProps) => {
   
   const navItems = [
     { to: '/', icon: <Home className="w-5 h-5" />, label: 'Home' },
-    { to: '/rooms', icon: <Building className="w-5 h-5" />, label: 'Rooms' },
+    { to: '/rooms', icon: <img 
+      src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
+      alt="Rooms" 
+      className={`w-5 h-5 ${theme === 'dark' ? 'brightness-200' : ''}`} 
+    />, label: 'Rooms' },
     { to: '/people', icon: <UserRound className="w-5 h-5" />, label: 'People' },
     { to: '/allocations', icon: <Users className="w-5 h-5" />, label: 'Allocations' },
   ];
@@ -67,7 +72,11 @@ const Layout = ({ children }: LayoutProps) => {
             <div className="flex justify-between items-center px-4 mb-2">
               <div className="font-bold text-xl flex items-center gap-3">
                 <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
-                  <Building className="w-5 h-5 text-primary" />
+                  <img 
+                    src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
+                    alt="Roomify Logo" 
+                    className={`w-6 h-6 ${theme === 'dark' ? 'brightness-200' : ''}`}
+                  />
                 </div>
                 <span className="text-foreground">Roomify</span>
               </div>

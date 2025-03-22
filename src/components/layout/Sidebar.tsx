@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Building, ChevronLeft, ChevronRight, Moon, Sun } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import NavItem from './NavItem';
@@ -32,13 +32,21 @@ const Sidebar = ({ navOpen, toggleNav, theme, toggleTheme, navItems }: SidebarPr
           {navOpen ? (
             <div className="font-bold text-xl flex items-center gap-3">
               <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
-                <Building className="w-5 h-5 text-primary" />
+                <img 
+                  src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
+                  alt="Roomify Logo" 
+                  className={`w-6 h-6 ${theme === 'dark' ? 'brightness-200' : ''}`}
+                />
               </div>
               <span className="text-foreground">Roomify</span>
             </div>
           ) : (
             <div className="w-8 h-8 mx-auto rounded-md bg-primary/10 flex items-center justify-center">
-              <Building className="w-5 h-5 text-primary" />
+              <img 
+                src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
+                alt="Roomify Logo" 
+                className={`w-6 h-6 ${theme === 'dark' ? 'brightness-200' : ''}`}
+              />
             </div>
           )}
           {navOpen && (

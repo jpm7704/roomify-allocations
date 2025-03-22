@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Building, Moon, Sun } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface MobileHeaderProps {
@@ -25,7 +25,11 @@ const MobileHeader = ({ openMobileMenu, theme, toggleTheme }: MobileHeaderProps)
         </div>
       </Button>
       <div className="flex items-center gap-2">
-        <Building className="w-5 h-5 text-primary" />
+        <img 
+          src="/lovable-uploads/4f847240-5664-46f4-879f-80afcc2a9a0f.png" 
+          alt="Roomify Logo" 
+          className={`w-7 h-7 ${theme === 'dark' ? 'brightness-200' : ''}`}
+        />
         <h2 className="font-bold text-xl">Roomify</h2>
       </div>
       <Button 
