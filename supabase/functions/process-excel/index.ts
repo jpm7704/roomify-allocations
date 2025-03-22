@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import * as XLSX from "https://esm.sh/xlsx@0.18.5";
@@ -26,6 +25,18 @@ serve(async (req) => {
   }
 
   try {
+    // Check if this is a test connection request
+    const contentType = req.headers.get('content-type') || '';
+    
+    if (contentType.includes('application/json')) {
+      const { action } = await req.json();
+      
+      if (action === 'test_connection') {
+        return await handleTestConnection();
+      }
+    }
+    
+    // Regular file processing
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const formData = await req.formData();
     const file = formData.get('file');
@@ -128,6 +139,74 @@ serve(async (req) => {
     );
   }
 });
+
+async function handleTestConnection() {
+  console.log('Testing Mistral AI API connection');
+  
+  if (!MISTRAL_API_KEY) {
+    console.error('MISTRAL_API_KEY is not set');
+    return new Response(
+      JSON.stringify({ 
+        success: false,
+        message: 'API key not configured - please add MISTRAL_API_KEY to your Supabase secrets'
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  
+  try {
+    // Make a simple request to Mistral API
+    const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${MISTRAL_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'mistral-large-latest',
+        messages: [
+          { role: 'user', content: 'Hello, is this connection working?' }
+        ],
+        temperature: 0.2,
+        max_tokens: 10 // Keep it minimal for testing
+      })
+    });
+    
+    console.log('Mistral API test response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Mistral API test error:', errorText);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: `API returned error ${response.status}: ${errorText}`
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    await response.json(); // Just to verify we can parse the response
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        message: 'Successfully connected to Mistral AI API'
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+    
+  } catch (error) {
+    console.error('Error testing Mistral API connection:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false,
+        message: `Connection error: ${error.message}`
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+}
 
 async function updateImportStatus(supabase, importId, status, errorMessage = null, processed = 0, failed = 0) {
   const updateData = {
@@ -269,4 +348,3 @@ function extractFieldValue(row, possibleFields) {
   }
   return null;
 }
-

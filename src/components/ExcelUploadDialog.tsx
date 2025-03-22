@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, FileUpIcon, AlertTriangle } from 'lucide-react';
+import { Upload, FileUpIcon, AlertTriangle, WifiIcon } from 'lucide-react';
 
 interface ExcelUploadDialogProps {
   isOpen: boolean;
@@ -19,7 +18,7 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState<'idle' | 'uploading' | 'processing' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'uploading' | 'processing' | 'success' | 'error' | 'testing'>('idle');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -47,14 +46,12 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
       setStatus('uploading');
       setProgress(10);
 
-      // Upload and process the file
       const formData = new FormData();
       formData.append('file', file);
       
       setProgress(30);
       setStatus('processing');
       
-      // Add debug toast to show we're processing
       toast.info('Processing with Mistral AI, this may take a few moments...');
       
       const result = await supabase.functions.invoke('process-excel', {
@@ -96,6 +93,32 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
     setUploading(false);
   };
 
+  const testConnection = async () => {
+    try {
+      setStatus('testing');
+      toast.info('Testing connection to Mistral AI...');
+      
+      const testResult = await supabase.functions.invoke('process-excel', {
+        body: { action: 'test_connection' },
+      });
+      
+      if (testResult.error) {
+        throw new Error(testResult.error.message);
+      }
+      
+      if (testResult.data?.success) {
+        toast.success('Successfully connected to Mistral AI API!');
+      } else {
+        toast.error(`Connection test failed: ${testResult.data?.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error testing connection:', error);
+      toast.error(`Connection test failed: ${error.message}`);
+    } finally {
+      setStatus('idle');
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -115,7 +138,7 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
                 type="file"
                 accept=".xlsx,.xls"
                 onChange={handleFileChange}
-                disabled={uploading}
+                disabled={uploading || status === 'testing'}
                 className={file ? 'file:text-primary' : ''}
               />
             </div>
@@ -145,28 +168,43 @@ const ExcelUploadDialog = ({ isOpen, onOpenChange, onSuccess }: ExcelUploadDialo
             </div>
           )}
 
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-between gap-2">
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => onOpenChange(false)}
-              disabled={uploading}
+              onClick={testConnection}
+              disabled={uploading || status === 'testing'}
             >
-              Cancel
+              <WifiIcon className="mr-2 h-4 w-4" />
+              Test Connection
             </Button>
-            <Button type="submit" disabled={!file || uploading}>
-              {uploading ? (
-                <>
-                  <FileUpIcon className="mr-2 h-4 w-4 animate-pulse" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload & Process
-                </>
-              )}
-            </Button>
+            
+            <div className="flex gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                disabled={uploading || status === 'testing'}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={!file || uploading || status === 'testing'}
+              >
+                {uploading ? (
+                  <>
+                    <FileUpIcon className="mr-2 h-4 w-4 animate-pulse" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload & Process
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>
