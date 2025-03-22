@@ -9,7 +9,7 @@ function Skeleton({
   return (
     <div
       className={cn(
-        "animate-pulse rounded-md bg-muted/70",
+        "animate-pulse rounded-xl bg-muted/70",
         shimmer && "shimmer",
         className
       )}
