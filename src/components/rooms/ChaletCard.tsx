@@ -53,16 +53,6 @@ const ChaletCard = ({
     
     return `${count} ${count === 1 ? bedTypeDisplay : bedTypeDisplay + 's'}`;
   };
-
-  // Display just the chalet name without adding "Chalet" prefix again
-  // chaletName already includes "Chalet" so we don't need to prepend it
-  const displayName = chaletName;
-
-  // Clean room name when displaying in the room list
-  const cleanRoomName = (roomName: string) => {
-    // Remove the chalet name prefix to avoid duplication
-    return roomName.replace(`${chaletName} - `, '');
-  };
   
   return (
     <Card 
@@ -80,7 +70,7 @@ const ChaletCard = ({
           <CardTitle className="text-xl font-semibold transition-colors duration-500 ease-in-out group-hover:text-primary">
             <div className="flex items-center">
               <Home className="h-4 w-4 mr-2" />
-              {displayName}
+              {chaletName}
             </div>
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-1">
@@ -158,7 +148,7 @@ const ChaletCard = ({
                 onClick={() => onClick?.(room)}
               >
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium">{cleanRoomName(room.name)}</h4>
+                  <h4 className="font-medium">{room.name.replace(chaletName + ' - ', '')}</h4>
                   {room.occupied < room.capacity && (
                     <Button 
                       size="sm" 
