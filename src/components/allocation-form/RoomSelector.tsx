@@ -2,6 +2,7 @@
 import { Room } from '@/components/RoomCard';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Bed } from 'lucide-react';
 
 interface RoomSelectorProps {
   rooms: Room[];
@@ -18,6 +19,24 @@ const RoomSelector = ({
   onCreateRoom,
   onOpenChange
 }: RoomSelectorProps) => {
+  // Helper function to display bed information
+  const getBedInfo = (room: Room) => {
+    if (!room.bedType) return null;
+    
+    const bedTypeDisplay = {
+      'single': 'Single bed',
+      'double': 'Double bed',
+      'twin': 'Twin beds'
+    }[room.bedType] || room.bedType;
+    
+    return (
+      <div className="flex items-center text-xs">
+        <Bed className="h-3 w-3 mr-1" />
+        {bedTypeDisplay}
+      </div>
+    );
+  };
+  
   return (
     <div className="max-h-[200px] overflow-y-auto border rounded-md p-2">
       {rooms.length === 0 ? (
@@ -57,8 +76,9 @@ const RoomSelector = ({
             }}
           >
             <div className="font-medium">{room.name}</div>
-            <div className="text-sm">
-              {room.type === 'Personal tent' ? 'Tent' : 'Chalet'}
+            <div className="text-sm flex items-center justify-between">
+              <span>{room.type === 'Personal tent' ? 'Tent' : 'Chalet'}</span>
+              {getBedInfo(room)}
             </div>
             <div className="text-xs mt-1">
               Occupancy: {room.occupied}/{room.capacity}

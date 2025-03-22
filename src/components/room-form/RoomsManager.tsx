@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Minus, Plus } from 'lucide-react';
 import { UseFormReturn } from 'react-hook-form';
 import { RoomFormValues } from './types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface RoomsManagerProps {
   form: UseFormReturn<RoomFormValues>;
@@ -67,6 +68,65 @@ export function RoomsManager({ form, addRoom, removeRoom }: RoomsManagerProps) {
 
             <FormField
               control={form.control}
+              name={`rooms.${index}.bedType`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bed Type*</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value || 'single'}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select bed type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="single">Single Bed</SelectItem>
+                      <SelectItem value="double">Double Bed</SelectItem>
+                      <SelectItem value="twin">Twin Beds</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name={`rooms.${index}.bedCount`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Number of Beds</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      min="1" 
+                      placeholder="Number of beds" 
+                      {...field}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 1;
+                        field.onChange(value);
+                        
+                        // Auto-calculate capacity based on bed type and count
+                        const bedType = form.getValues(`rooms.${index}.bedType`) || 'single';
+                        let capacity = value;
+                        if (bedType === 'double') {
+                          capacity = value * 2;
+                        }
+                        form.setValue(`rooms.${index}.capacity`, capacity);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name={`rooms.${index}.capacity`}
               render={({ field }) => (
                 <FormItem>
@@ -76,9 +136,10 @@ export function RoomsManager({ form, addRoom, removeRoom }: RoomsManagerProps) {
                       type="number" 
                       min="1" 
                       required
-                      placeholder="Beds" 
+                      placeholder="Total capacity" 
                       {...field}
                       onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                      className="bg-muted/20"
                     />
                   </FormControl>
                   <FormMessage />

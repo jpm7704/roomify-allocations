@@ -16,6 +16,9 @@ export interface Room {
   floor?: string;
   building?: string;
   type?: string;
+  bedType?: string;
+  bedCount?: number;
+  chaletGroup?: string;
 }
 
 interface RoomCardProps {
@@ -55,13 +58,29 @@ const RoomCard = ({
     return room.type === 'Personal tent' ? 'tent' : 'room';
   };
   
+  // Get bed information display
+  const getBedInfo = () => {
+    if (!room.bedType) return null;
+    
+    const bedTypeDisplay = {
+      'single': 'Single bed',
+      'double': 'Double bed',
+      'twin': 'Twin beds'
+    }[room.bedType] || room.bedType;
+    
+    const count = room.bedCount || 1;
+    
+    return `${count} ${count === 1 ? bedTypeDisplay : bedTypeDisplay + 's'}`;
+  };
+  
   return (
     <Card 
       className={cn(
         "overflow-hidden transition-all duration-500 ease-in-out item-transition",
         "bg-card/60 backdrop-blur-md border-border/30 shadow-sm",
         "hover:shadow-md hover:border-primary/20 group",
-        isHovered && "ring-1 ring-primary/20"
+        isHovered && "ring-1 ring-primary/20",
+        room.chaletGroup && "border-l-4 border-l-primary/50"
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -76,7 +95,7 @@ const RoomCard = ({
             </div>
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            {room.type || 'Chalet'}
+            {room.chaletGroup ? `Part of ${room.chaletGroup}` : room.type || 'Chalet'}
           </p>
         </div>
         
@@ -111,7 +130,7 @@ const RoomCard = ({
           <div className="flex items-center">
             <Bed className="h-5 w-5 mr-2 text-muted-foreground" />
             <span className="text-sm font-medium">
-              {room.capacity} {room.capacity === 1 ? 'Bed' : 'Beds'}
+              {getBedInfo() || `${room.capacity} ${room.capacity === 1 ? 'Bed' : 'Beds'}`}
             </span>
           </div>
           

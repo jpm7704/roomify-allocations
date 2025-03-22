@@ -34,7 +34,9 @@ export const useCreateRoom = (rooms: Room[], setRooms: (rooms: Room[]) => void) 
             description: values.notes || '',
             type: 'Personal tent',
             occupied: 0,
-            user_id: user.id
+            user_id: user.id,
+            bed_type: values.rooms[0].bedType || 'single',
+            bed_count: values.rooms[0].bedCount || 1
           })
           .select();
 
@@ -47,20 +49,23 @@ export const useCreateRoom = (rooms: Room[], setRooms: (rooms: Room[]) => void) 
             capacity: data[0].capacity,
             occupied: 0,
             description: data[0].description,
-            type: data[0].type || 'Personal tent'
+            type: data[0].type || 'Personal tent',
+            bedType: data[0].bed_type,
+            bedCount: data[0].bed_count
           };
 
           setRooms([...rooms, newRoom]);
           toast.success(`Tent "${tentName}" created successfully`);
         }
       } 
-      // For Chalet type, we can have multiple rooms (no more limit of 4)
+      // For Chalet type, we handle each room separately but grouped under one chalet
       else {
         const newRooms: Room[] = [];
+        const chaletName = `Chalet ${values.chaletNumber}`;
         
         // Create each room in the chalet
         for (const room of values.rooms) {
-          const roomName = `Chalet ${values.chaletNumber}${room.roomNumber ? ` - Room ${room.roomNumber}` : ''}`;
+          const roomName = `${chaletName}${room.roomNumber ? ` - Room ${room.roomNumber}` : ''}`;
           
           const { data, error } = await supabase
             .from('accommodation_rooms')
@@ -70,7 +75,10 @@ export const useCreateRoom = (rooms: Room[], setRooms: (rooms: Room[]) => void) 
               description: values.notes || '',
               type: 'Chalet',
               occupied: 0,
-              user_id: user.id
+              user_id: user.id,
+              bed_type: room.bedType || 'single',
+              bed_count: room.bedCount || 1,
+              chalet_group: chaletName // Group rooms under the same chalet
             })
             .select();
 
@@ -83,7 +91,10 @@ export const useCreateRoom = (rooms: Room[], setRooms: (rooms: Room[]) => void) 
               capacity: data[0].capacity,
               occupied: 0,
               description: data[0].description,
-              type: data[0].type || 'Chalet'
+              type: data[0].type || 'Chalet',
+              bedType: data[0].bed_type,
+              bedCount: data[0].bed_count,
+              chaletGroup: data[0].chalet_group
             };
 
             newRooms.push(newRoom);

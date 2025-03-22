@@ -31,7 +31,7 @@ const RoomFormDialog = ({
     defaultValues: {
       type: 'Chalet',
       chaletNumber: '',
-      rooms: [{ roomNumber: '', capacity: 2 }],
+      rooms: [{ roomNumber: '', capacity: 2, bedType: 'single', bedCount: 2 }],
       notes: '',
     },
   });
@@ -44,14 +44,14 @@ const RoomFormDialog = ({
     roomForm.reset({
       type: 'Chalet',
       chaletNumber: '',
-      rooms: [{ roomNumber: '', capacity: 2 }],
+      rooms: [{ roomNumber: '', capacity: 2, bedType: 'single', bedCount: 2 }],
       notes: '',
     });
   };
 
   const addRoom = () => {
     const currentRooms = roomForm.getValues().rooms || [];
-    const updatedRooms = [...currentRooms, { roomNumber: '', capacity: 2 }];
+    const updatedRooms = [...currentRooms, { roomNumber: '', capacity: 2, bedType: 'single', bedCount: 2 }];
     roomForm.setValue('rooms', updatedRooms);
     roomForm.trigger('rooms');
   };
@@ -70,7 +70,7 @@ const RoomFormDialog = ({
     setSelectedType(value);
     // Reset rooms when changing type
     if (value === 'Personal tent') {
-      roomForm.setValue('rooms', [{ roomNumber: '', capacity: 2 }]);
+      roomForm.setValue('rooms', [{ roomNumber: '', capacity: 2, bedType: 'single', bedCount: 1 }]);
     }
   };
 
@@ -80,7 +80,7 @@ const RoomFormDialog = ({
       roomForm.reset({
         type: 'Chalet',
         chaletNumber: '',
-        rooms: [{ roomNumber: '', capacity: 2 }],
+        rooms: [{ roomNumber: '', capacity: 2, bedType: 'single', bedCount: 2 }],
         notes: '',
       });
       setSelectedType('Chalet');
