@@ -5,6 +5,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import AddPresetChalets from './AddPresetChalets';
 
 interface RoomsHeaderProps {
   onAddRoom: () => void;
@@ -65,6 +66,8 @@ const RoomsHeader = ({ onAddRoom, onDataCleared }: RoomsHeaderProps) => {
           <Trash2 className="mr-2 h-4 w-4" />
           Clear All Data
         </Button>
+        
+        <AddPresetChalets onDataAdded={onDataCleared || (() => {})} />
         
         <Button className="rounded-md" onClick={onAddRoom}>
           <Plus className="mr-2 h-4 w-4" />
