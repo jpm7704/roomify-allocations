@@ -7,7 +7,7 @@ import { Person } from '@/components/PersonCard';
 import { Room } from '@/components/RoomCard';
 import { Allocation } from '@/components/AllocationCard';
 import AllocationsList, { RoomWithOccupants } from '@/components/AllocationsList';
-import AllocationFormDialog from '@/components/AllocationFormDialog';
+import AllocationFormDialog from '@/components/allocation-form/AllocationFormDialog';
 import RoomFormDialog from '@/components/RoomFormDialog';
 import AllocationDetailsDialog from '@/components/AllocationDetailsDialog';
 import { useForm } from 'react-hook-form';
