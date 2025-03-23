@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -56,6 +55,16 @@ const Profile = () => {
       });
 
       if (error) {
+        // If session is missing, notify user to login again
+        if (error.message?.includes('Auth session missing')) {
+          toast({
+            title: "Session expired",
+            description: "Your session has expired. Please login again.",
+            variant: "destructive",
+          });
+          navigate('/auth');
+          return;
+        }
         throw error;
       }
 
@@ -81,6 +90,9 @@ const Profile = () => {
       navigate('/landing');
     } catch (error) {
       console.error('Error signing out:', error);
+      // Even if signOut throws an error, we still want to redirect to landing
+      // as the AuthContext will handle showing appropriate toast messages
+      navigate('/landing');
     }
   };
 
