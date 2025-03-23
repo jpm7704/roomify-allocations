@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import RoomFormDialog from '@/components/RoomFormDialog';
 import useRooms from '@/hooks/useRooms';
@@ -8,10 +8,17 @@ import RoomsSearch from '@/components/rooms/RoomsSearch';
 import RoomsTabs from '@/components/rooms/RoomsTabs';
 import RoomsList from '@/components/rooms/RoomsList';
 import { Room } from '@/components/RoomCard';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Rooms = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [userStats, setUserStats] = useState<{ total: number, withRooms: number } | null>(null);
+  const { toast } = useToast();
+  const { user } = useAuth();
+  
   const {
     rooms,
     loading,
@@ -24,6 +31,58 @@ const Rooms = () => {
     handleAssignRoom,
     fetchRooms
   } = useRooms();
+  
+  useEffect(() => {
+    // This will only show for the current user's session
+    // Won't affect other users' data
+    const checkRoomStats = async () => {
+      if (!user) return;
+      
+      try {
+        // Get total number of users
+        const { count: totalUsers, error: countError } = await supabase
+          .from('auth.users')
+          .select('*', { count: 'exact', head: true });
+        
+        if (countError) throw countError;
+        
+        // Get number of users with rooms
+        const { data: userRooms, error: roomsError } = await supabase
+          .from('accommodation_rooms')
+          .select('user_id', { count: 'exact' })
+          .limit(1);
+          
+        if (roomsError) throw roomsError;
+        
+        // Get unique count of users with rooms
+        const { data: uniqueUsers, error: uniqueError } = await supabase
+          .from('accommodation_rooms')
+          .select('user_id')
+          .limit(100);
+          
+        if (uniqueError) throw uniqueError;
+        
+        // Calculate unique users with rooms
+        const uniqueUserIds = new Set();
+        uniqueUsers?.forEach(row => uniqueUserIds.add(row.user_id));
+        
+        setUserStats({
+          total: totalUsers || 0,
+          withRooms: uniqueUserIds.size
+        });
+        
+        // Notify the current user about the data status
+        toast({
+          title: "Room Data Report",
+          description: `${uniqueUserIds.size} out of ${totalUsers} users have room data.`,
+        });
+      } catch (error) {
+        console.error("Error fetching user stats:", error);
+      }
+    };
+    
+    checkRoomStats();
+  }, [user, toast]);
   
   const handleOpenRoomDialog = () => {
     setIsRoomDialogOpen(true);
@@ -58,6 +117,17 @@ const Rooms = () => {
   return (
     <Layout>
       <div className="page-container">
+        {userStats && (
+          <div className="mb-4 p-4 border rounded-md bg-slate-50">
+            <h3 className="text-sm font-medium">User Data Report</h3>
+            <p className="text-sm text-slate-500">
+              {userStats.withRooms} out of {userStats.total} users have the 67 room dataset.
+              {userStats.withRooms < userStats.total && 
+                " New users will need to have rooms added separately."}
+            </p>
+          </div>
+        )}
+        
         <RoomsHeader 
           onAddRoom={handleOpenRoomDialog} 
           onDataCleared={handleDataCleared}
