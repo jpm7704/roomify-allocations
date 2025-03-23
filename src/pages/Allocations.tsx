@@ -1,34 +1,21 @@
 
-import { useState, useEffect } from 'react';
-import { Plus, Building } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useSearchParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
-import { Person } from '@/components/PersonCard';
-import { Room } from '@/components/RoomCard';
-import { Allocation } from '@/components/AllocationCard';
-import AllocationsList, { RoomWithOccupants } from '@/components/AllocationsList';
 import AllocationFormDialog from '@/components/allocation-form/AllocationFormDialog';
 import RoomFormDialog from '@/components/RoomFormDialog';
 import AllocationDetailsDialog from '@/components/AllocationDetailsDialog';
-import { useForm } from 'react-hook-form';
-import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAllocations } from '@/hooks/useAllocations';
 import { useAllocationFormHandlers } from '@/components/allocation/AllocationFormHandlers';
 import { useRoomHandlers } from '@/components/allocation/RoomHandlers';
-import { AllocationFilters } from '@/components/allocation/AllocationFilters';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAllocationDialogs } from '@/hooks/useAllocationDialogs';
+import AllocationsHeader from '@/components/allocations/AllocationsHeader';
+import AllocationsContent from '@/components/allocations/AllocationsContent';
 
 const Allocations = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const roomIdFromUrl = searchParams.get('roomId');
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  const [filteredRoomAllocations, setFilteredRoomAllocations] = useState<RoomWithOccupants[]>([]);
   
   const {
     loading,
@@ -46,17 +33,37 @@ const Allocations = () => {
     setMultiSelectMode,
     viewedAllocation,
     setViewedAllocation,
-    viewedRoomAllocation,
-    setViewedRoomAllocation,
     handleRemoveOccupant,
     fetchData
   } = useAllocations(roomIdFromUrl);
 
-  const form = useForm({
-    defaultValues: {
-      notes: '',
-    },
-  });
+  const {
+    isDialogOpen,
+    setIsDialogOpen,
+    isRoomDialogOpen,
+    setIsRoomDialogOpen,
+    isDetailsDialogOpen,
+    setIsDetailsDialogOpen,
+    handleCreateAllocation,
+    handleRoomAllocationClick,
+    handleAllocationClick,
+    handleEditAllocation,
+    handleCreateRoom,
+    handleCancelRoomDialog,
+    handleCancelAllocationDialog,
+  } = useAllocationDialogs(
+    rooms,
+    selectedPerson,
+    setSelectedPerson,
+    selectedRoom,
+    setSelectedRoom,
+    selectedPeople,
+    setSelectedPeople,
+    multiSelectMode,
+    setMultiSelectMode,
+    fetchData,
+    roomIdFromUrl
+  );
 
   const {
     handlePersonSelect,
@@ -87,117 +94,24 @@ const Allocations = () => {
     (newRooms) => {},  // We'll use the fetchData function instead
     setIsRoomDialogOpen
   );
-
-  useEffect(() => {
-    if (roomIdFromUrl && rooms.length > 0) {
-      const roomToSelect = rooms.find(room => room.id === roomIdFromUrl);
-      if (roomToSelect) {
-        setSelectedRoom(roomToSelect);
-        if (roomToSelect.capacity > 1 && roomToSelect.capacity - roomToSelect.occupied > 1) {
-          setMultiSelectMode(true);
-        }
-        setIsDialogOpen(true);
-      }
-    }
-  }, [roomIdFromUrl, rooms]);
-
-  useEffect(() => {
-    setFilteredRoomAllocations(roomAllocations);
-  }, [roomAllocations]);
-
-  const handleCreateAllocation = () => {
-    setSelectedPerson(null);
-    setSelectedRoom(null);
-    setSelectedPeople([]);
-    form.reset({ notes: '' });
-    
-    const hasMultiCapacityRooms = rooms.some(room => room.capacity > 1 && room.occupied < room.capacity);
-    setMultiSelectMode(hasMultiCapacityRooms);
-    
-    setIsDialogOpen(true);
-  };
-  
-  const handleRoomAllocationClick = (roomAllocation: RoomWithOccupants) => {
-    setViewedRoomAllocation(roomAllocation);
-  };
-
-  const handleAllocationClick = (allocation: Allocation) => {
-    setViewedAllocation(allocation);
-    setIsDetailsDialogOpen(true);
-  };
-
-  const handleEditAllocation = (allocation: Allocation) => {
-    setSelectedPerson(allocation.person);
-    setSelectedRoom(allocation.room);
-    setSelectedPeople([]);
-    form.reset({ notes: allocation.notes || '' });
-    setMultiSelectMode(false);
-    setIsDialogOpen(true);
-  };
-
-  const handleCreateRoom = () => {
-    setIsRoomDialogOpen(true);
-  };
-
-  const handleCancelRoomDialog = () => {
-    setIsRoomDialogOpen(false);
-  };
-
-  const handleCancelAllocationDialog = () => {
-    setIsDialogOpen(false);
-    setSelectedPeople([]);
-    
-    if (roomIdFromUrl) {
-      navigate('/allocations');
-    }
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery('');
-    setFilteredRoomAllocations(roomAllocations);
-  };
   
   return (
     <Layout>
       <div className="page-container">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Room Allocations</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              SDA Women's Ministry Camp Meeting
-            </p>
-          </div>
-          
-          <div className="flex flex-wrap sm:flex-nowrap gap-2">
-            <Button variant="outline" className="rounded-md w-full sm:w-auto" onClick={handleCreateRoom}>
-              <Building className="mr-2 h-4 w-4" />
-              Add Room
-            </Button>
-            <Button className="rounded-md w-full sm:w-auto" onClick={handleCreateAllocation}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Allocation
-            </Button>
-          </div>
-        </div>
-        
-        <AllocationFilters 
-          roomAllocations={roomAllocations}
-          onFilterChange={setFilteredRoomAllocations}
-          onSearchChange={setSearchQuery}
+        <AllocationsHeader 
+          onCreateRoom={handleCreateRoom}
+          onCreateAllocation={handleCreateAllocation}
         />
         
-        <div className="mt-6">
-          <AllocationsList
-            loading={loading}
-            roomAllocations={filteredRoomAllocations}
-            searchQuery={searchQuery}
-            onRemoveOccupant={handleRemoveOccupant}
-            onClick={handleRoomAllocationClick}
-            onCreateRoom={handleCreateRoom}
-            onCreateAllocation={searchQuery ? handleClearSearch : handleCreateAllocation}
-            hasRooms={rooms.length > 0}
-          />
-        </div>
+        <AllocationsContent
+          loading={loading}
+          roomAllocations={roomAllocations}
+          onRemoveOccupant={handleRemoveOccupant}
+          onRoomAllocationClick={handleRoomAllocationClick}
+          onCreateRoom={handleCreateRoom}
+          onCreateAllocation={handleCreateAllocation}
+          hasRooms={rooms.length > 0}
+        />
 
         <AllocationFormDialog
           isOpen={isDialogOpen}
