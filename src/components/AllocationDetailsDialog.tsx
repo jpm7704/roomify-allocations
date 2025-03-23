@@ -1,13 +1,16 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Allocation } from './AllocationCard';
-import { Building, Calendar, FileText, Mail, MapPin, Phone, Trash2, UserRound, Users } from 'lucide-react';
+import { Building, Calendar, FileText, Mail, MapPin, Phone, Trash2, UserRound, Users, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from './ui/badge';
+import { useSmsNotification } from '@/hooks/useSmsNotification';
+import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertDescription } from './ui/alert';
 
 interface AllocationDetailsDialogProps {
   allocation: Allocation | null;
@@ -24,6 +27,10 @@ const AllocationDetailsDialog = ({
   onDelete,
   onEdit
 }: AllocationDetailsDialogProps) => {
+  const [sending, setSending] = useState(false);
+  const [smsStatus, setSmsStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const { sendAllocationSms } = useSmsNotification();
+
   if (!allocation) return null;
   
   const getInitials = (name: string) => {
@@ -52,6 +59,46 @@ const AllocationDetailsDialog = ({
     onEdit(allocation);
     onOpenChange(false);
   };
+
+  const handleSendSms = async () => {
+    setSending(true);
+    setSmsStatus('idle');
+    
+    try {
+      // Fetch the phone number for the person
+      const { data, error } = await supabase
+        .from('women_attendees')
+        .select('phone')
+        .eq('id', allocation.personId)
+        .single();
+        
+      if (error) {
+        console.error(`Error fetching phone for ${allocation.person.name}:`, error);
+        setSmsStatus('error');
+        setSending(false);
+        return;
+      }
+      
+      if (data && data.phone) {
+        const success = await sendAllocationSms(
+          data.phone, 
+          allocation.person.name, 
+          allocation.room.name,
+          allocation.room.type || 'Chalet'
+        );
+        
+        setSmsStatus(success ? 'success' : 'error');
+      } else {
+        console.log(`No phone number available for ${allocation.person.name}`);
+        setSmsStatus('error');
+      }
+    } catch (error) {
+      console.error(`Failed to send notification to ${allocation.person.name}:`, error);
+      setSmsStatus('error');
+    } finally {
+      setSending(false);
+    }
+  };
   
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -79,6 +126,25 @@ const AllocationDetailsDialog = ({
               <Calendar className="h-3.5 w-3.5" />
               <span>Assigned on {formatDate(allocation.dateAssigned)}</span>
             </div>
+            
+            {/* SMS Status Alert */}
+            {smsStatus === 'success' && (
+              <Alert variant="success" className="py-2 px-3 flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  SMS notification sent successfully
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {smsStatus === 'error' && (
+              <Alert variant="destructive" className="py-2 px-3 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  Failed to send SMS notification
+                </AlertDescription>
+              </Alert>
+            )}
             
             {/* Person information */}
             <div className="space-y-4 transition-all duration-300 ease-in-out">
@@ -137,6 +203,17 @@ const AllocationDetailsDialog = ({
                 </div>
               )}
             </div>
+            
+            {/* Send SMS button */}
+            <Button 
+              variant="teal" 
+              className="w-full mt-3" 
+              onClick={handleSendSms}
+              disabled={sending}
+            >
+              <Send className="h-4 w-4 mr-2" />
+              {sending ? 'Sending...' : 'Send SMS Notification'}
+            </Button>
           </TabsContent>
           
           <TabsContent value="notes" className="px-5 pt-3 pb-5 transition-all duration-300 ease-in-out">
