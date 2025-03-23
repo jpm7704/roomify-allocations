@@ -54,57 +54,50 @@ serve(async (req) => {
     
     console.log(`Attempting to send SMS to ${to}: ${text}`);
 
-    // Send the SMS with a timeout
-    const responseData = await Promise.race([
-      new Promise((resolve, reject) => {
-        vonage.sms.send({ to, from, text }, (err, data) => {
-          if (err) {
-            console.error('Vonage SMS error:', JSON.stringify(err));
-            reject(err);
-          } else {
-            // Log the full response for debugging
-            console.log('Vonage response:', JSON.stringify(data));
-            
-            if (data.messages && data.messages.length > 0) {
-              const message = data.messages[0];
-              
-              if (message.status !== '0') {
-                const errorMsg = `SMS delivery failed with status: ${message.status}, reason: ${message['error-text'] || 'Unknown'}`;
-                console.error(errorMsg);
-                reject(new Error(errorMsg));
-                return;
-              }
-            }
-            
-            resolve(data);
-          }
-        });
-      }),
-      new Promise((_, reject) => {
-        // 8 second timeout on the server side
-        setTimeout(() => reject(new Error('SMS provider timeout')), 8000);
-      })
-    ]);
-
-    console.log('SMS sent successfully');
-    return new Response(
-      JSON.stringify({ success: true, data: responseData }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    // Send the SMS following Vonage's recommended pattern
+    try {
+      const resp = await vonage.sms.send({ to, from, text });
+      console.log('Message sent successfully');
+      console.log('Vonage response:', JSON.stringify(resp));
+      
+      // Check response details
+      if (resp.messages && resp.messages.length > 0) {
+        const message = resp.messages[0];
+        
+        if (message.status !== '0') {
+          const errorMsg = `SMS delivery failed with status: ${message.status}, reason: ${message['error-text'] || 'Unknown'}`;
+          console.error(errorMsg);
+          return new Response(
+            JSON.stringify({ error: errorMsg }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+      
+      return new Response(
+        JSON.stringify({ success: true, data: resp }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (err) {
+      console.error('There was an error sending the messages.', err);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to send SMS',
+          details: err.message || 'Unknown error'
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
   } catch (error) {
     console.error('Error in send-sms function:', error);
     const errorMessage = error.message || 'Unknown error occurred';
     
-    // Check if it's a timeout error
-    const isTimeout = errorMessage.includes('timeout');
-    
     return new Response(
       JSON.stringify({ 
         error: errorMessage,
-        isTimeout: isTimeout,
         details: 'Please check the Edge Function logs for more information'
       }),
-      { status: isTimeout ? 504 : 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
