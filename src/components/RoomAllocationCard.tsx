@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Building, User, Trash2, CalendarIcon, SendHorizontal } from 'lucide-react';
+import { Building, User, Trash2, CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,14 +13,12 @@ interface RoomAllocationCardProps {
   roomAllocation: RoomWithOccupants;
   onRemoveOccupant?: (roomId: string, personId: string) => void;
   onClick?: (roomAllocation: RoomWithOccupants) => void;
-  onSendSMS?: (roomAllocation: RoomWithOccupants) => void;
 }
 
 const RoomAllocationCard = ({ 
   roomAllocation, 
   onRemoveOccupant, 
-  onClick,
-  onSendSMS
+  onClick
 }: RoomAllocationCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const isMobile = useIsMobile();
@@ -80,25 +78,9 @@ const RoomAllocationCard = ({
         </div>
         
         <div className="mb-3">
-          <div className="text-xs font-medium mb-2 flex items-center justify-between text-muted-foreground">
-            <div className="flex items-center">
-              <User className="h-3 w-3 mr-1.5" />
-              Occupants
-            </div>
-            {occupants.length > 0 && onSendSMS && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 px-2 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSendSMS(roomAllocation);
-                }}
-              >
-                <SendHorizontal className="h-3 w-3 mr-1" />
-                SMS
-              </Button>
-            )}
+          <div className="text-xs font-medium mb-2 flex items-center text-muted-foreground">
+            <User className="h-3 w-3 mr-1.5" />
+            Occupants
           </div>
           
           {occupants.length === 0 ? (
