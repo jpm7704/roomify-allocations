@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -7,6 +6,7 @@ import { Person } from '@/components/PersonCard';
 import { Room } from '@/components/RoomCard';
 import { Allocation } from '@/components/AllocationCard';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSmsNotification } from '@/hooks/useSmsNotification';
 
 export const useAllocationFormHandlers = (
   rooms: Room[],
@@ -33,6 +33,7 @@ export const useAllocationFormHandlers = (
   });
   
   const { user } = useAuth();
+  const { sendAllocationSms } = useSmsNotification();
 
   const handlePersonSelect = (person: Person) => {
     setSelectedPerson(person);
@@ -57,6 +58,32 @@ export const useAllocationFormHandlers = (
     }
   };
 
+  const sendSmsNotifications = async (peopleToNotify: Person[], roomName: string, roomType: string) => {
+    for (const person of peopleToNotify) {
+      // Fetch the phone number for the person
+      try {
+        const { data, error } = await supabase
+          .from('women_attendees')
+          .select('phone')
+          .eq('id', person.id)
+          .single();
+          
+        if (error) {
+          console.error(`Error fetching phone for ${person.name}:`, error);
+          continue;
+        }
+        
+        if (data && data.phone) {
+          await sendAllocationSms(data.phone, person.name, roomName, roomType);
+        } else {
+          console.log(`No phone number available for ${person.name}, skipping SMS notification`);
+        }
+      } catch (error) {
+        console.error(`Failed to send notification to ${person.name}:`, error);
+      }
+    }
+  };
+
   const handleSaveAllocation = async () => {
     if (!user) {
       toast.error("You must be logged in to perform this action");
@@ -73,6 +100,9 @@ export const useAllocationFormHandlers = (
         let totalNewAllocations = 0;
         let totalUpdatedAllocations = 0;
         const notes = form.getValues().notes;
+        
+        // Keep track of the newly allocated people for sending SMS
+        const peopleToNotify: Person[] = [];
         
         for (const person of selectedPeople) {
           const existingAllocation = allocations.find(a => a.personId === person.id);
@@ -98,6 +128,7 @@ export const useAllocationFormHandlers = (
                 .eq('user_id', user.id);
               
               totalUpdatedAllocations++;
+              peopleToNotify.push(person);
             }
           } else {
             const { error } = await supabase
@@ -112,6 +143,7 @@ export const useAllocationFormHandlers = (
 
             if (error) throw error;
             totalNewAllocations++;
+            peopleToNotify.push(person);
           }
         }
         
@@ -121,6 +153,11 @@ export const useAllocationFormHandlers = (
           .update({ occupied: newOccupancy })
           .eq('id', selectedRoom.id)
           .eq('user_id', user.id);
+        
+        // Send SMS notifications to all newly allocated people
+        if (peopleToNotify.length > 0) {
+          sendSmsNotifications(peopleToNotify, selectedRoom.name, selectedRoom.type || 'Chalet');
+        }
         
         onFetchData();
 
@@ -211,6 +248,9 @@ export const useAllocationFormHandlers = (
           type: selectedRoom.type || 'Chalet'
         }
       };
+
+      // Send SMS notification for the new allocation
+      sendSmsNotifications([selectedPerson], selectedRoom.name, selectedRoom.type || 'Chalet');
 
       setAllocations([...allocations, newAllocation]);
       setRooms(rooms.map(r => r.id === selectedRoom.id ? { ...r, occupied: r.occupied + 1 } : r));
