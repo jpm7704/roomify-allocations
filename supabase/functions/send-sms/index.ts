@@ -32,7 +32,10 @@ serve(async (req) => {
     if (!apiKey || !apiSecret) {
       console.error('Missing Vonage API credentials:', { apiKey: !!apiKey, apiSecret: !!apiSecret });
       return new Response(
-        JSON.stringify({ error: 'Server configuration error: Missing API credentials' }),
+        JSON.stringify({ 
+          error: 'Server configuration error: Missing API credentials',
+          details: 'Please ensure VONAGE_API_KEY and VONAGE_API_SECRET are properly set in the Edge Function secrets'
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -49,7 +52,7 @@ serve(async (req) => {
     const from = "SDA Camp";
     const text = `Hello ${name}, you have been allocated to ${roomName} ${accommodationType} for the SDA Women's Ministry Camp Meeting. Contact the camp office if you have any questions.`;
     
-    console.log(`Sending SMS to ${to}: ${text}`);
+    console.log(`Attempting to send SMS to ${to}: ${text}`);
 
     // Send the SMS
     const responseData = await new Promise((resolve, reject) => {
@@ -77,6 +80,7 @@ serve(async (req) => {
       });
     });
 
+    console.log('SMS sent successfully');
     return new Response(
       JSON.stringify({ success: true, data: responseData }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -84,7 +88,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in send-sms function:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Unknown error occurred' }),
+      JSON.stringify({ 
+        error: error.message || 'Unknown error occurred',
+        details: 'Please check the Edge Function logs for more information'
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

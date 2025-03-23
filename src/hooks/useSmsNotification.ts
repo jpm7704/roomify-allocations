@@ -42,6 +42,7 @@ export const useSmsNotification = () => {
       if (!phoneNumber) {
         console.log('No phone number provided, skipping SMS notification');
         setSendingStatus(prev => ({ ...prev, [personId]: false }));
+        toast.error(`No phone number available for ${personName}`);
         return false;
       }
 
@@ -49,7 +50,7 @@ export const useSmsNotification = () => {
       const formattedPhoneNumber = formatZimbabweanNumber(phoneNumber);
       console.log(`Formatted phone number: ${formattedPhoneNumber} (original: ${phoneNumber})`);
       
-      toast.loading(`Sending SMS to ${personName}...`);
+      toast.loading(`Sending SMS to ${personName}...`, { id: `sms-${personId}` });
       
       const { data, error } = await supabase.functions.invoke('send-sms', {
         body: {
@@ -65,18 +66,26 @@ export const useSmsNotification = () => {
 
       if (error) {
         console.error('Error sending SMS notification:', error);
-        toast.dismiss();
+        toast.dismiss(`sms-${personId}`);
         toast.error(`Failed to send SMS to ${personName}`);
         return false;
       }
 
       console.log('SMS notification response:', data);
-      toast.dismiss();
+      
+      if (data.error) {
+        console.error('SMS service error:', data.error);
+        toast.dismiss(`sms-${personId}`);
+        toast.error(`SMS failed: ${data.error}`);
+        return false;
+      }
+      
+      toast.dismiss(`sms-${personId}`);
       toast.success(`SMS sent to ${personName}`);
       return true;
     } catch (error) {
       console.error('Exception sending SMS notification:', error);
-      toast.dismiss();
+      toast.dismiss(`sms-${personId}`);
       toast.error(`Failed to send SMS to ${personName}`);
       setSendingStatus(prev => ({ ...prev, [personId]: false }));
       return false;
