@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import RoomFormDialog from '@/components/RoomFormDialog';
@@ -39,20 +38,12 @@ const Rooms = () => {
       if (!user) return;
       
       try {
-        // Get total number of users
+        // Get total number of users from profiles table instead of auth.users
         const { count: totalUsers, error: countError } = await supabase
-          .from('auth.users')
+          .from('profiles')
           .select('*', { count: 'exact', head: true });
         
         if (countError) throw countError;
-        
-        // Get number of users with rooms
-        const { data: userRooms, error: roomsError } = await supabase
-          .from('accommodation_rooms')
-          .select('user_id', { count: 'exact' })
-          .limit(1);
-          
-        if (roomsError) throw roomsError;
         
         // Get unique count of users with rooms
         const { data: uniqueUsers, error: uniqueError } = await supabase
