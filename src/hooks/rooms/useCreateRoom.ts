@@ -4,39 +4,58 @@ import { Room } from '@/components/RoomCard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { RoomFormInput } from './types';
 
-export const useCreateRoom = (rooms: Room[], setRooms: (rooms: Room[]) => void) => {
+export const useCreateRoom = (rooms: Room[], setRooms: React.Dispatch<React.SetStateAction<Room[]>>) => {
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const { user } = useAuth();
-  
-  const handleSaveRoom = async (values: RoomFormInput) => {
+
+  const handleSaveRoom = async (roomData: Partial<Room>) => {
     if (!user) {
-      toast.error("You must be logged in to perform this action");
+      toast.error("You must be logged in to create rooms");
       return;
     }
-    
-    try {
-      if (!values.chaletNumber || values.rooms.length === 0) {
-        toast.error("Chalet/Tent number and at least one room are required");
-        return;
-      }
 
-      // For Personal tent type, we only have one room
-      if (values.type === 'Personal tent') {
-        const tentName = `Tent ${values.chaletNumber}`;
-        
+    try {
+      // Check if it's an update or create operation
+      if (roomData.id) {
+        // Update existing room
+        const { error } = await supabase
+          .from('accommodation_rooms')
+          .update({
+            name: roomData.name,
+            capacity: roomData.capacity,
+            description: roomData.description,
+            type: roomData.type,
+            bed_type: roomData.bedType,
+            bed_count: roomData.bedCount,
+            chalet_group: roomData.chaletGroup,
+            // Don't update user_id when updating a room
+          })
+          .eq('id', roomData.id);
+
+        if (error) throw error;
+
+        // Update rooms state
+        setRooms(prevRooms => 
+          prevRooms.map(room => 
+            room.id === roomData.id ? { ...room, ...roomData } : room
+          )
+        );
+
+        toast.success("Room updated successfully");
+      } else {
+        // Create new room
         const { data, error } = await supabase
           .from('accommodation_rooms')
           .insert({
-            name: tentName,
-            capacity: values.rooms[0].capacity,
-            description: values.notes || '',
-            type: 'Personal tent',
-            occupied: 0,
-            user_id: user.id,
-            bed_type: values.rooms[0].bedType || 'single',
-            bed_count: values.rooms[0].bedCount || 1
+            name: roomData.name,
+            capacity: roomData.capacity || 1,
+            description: roomData.description || '',
+            type: roomData.type || 'Chalet',
+            bed_type: roomData.bedType || 'single',
+            bed_count: roomData.bedCount || 1,
+            chalet_group: roomData.chaletGroup || '',
+            user_id: user.id, // Assign the current user's ID
           })
           .select();
 
@@ -49,68 +68,21 @@ export const useCreateRoom = (rooms: Room[], setRooms: (rooms: Room[]) => void) 
             capacity: data[0].capacity,
             occupied: 0,
             description: data[0].description,
-            type: data[0].type || 'Personal tent',
+            type: data[0].type,
             bedType: data[0].bed_type,
-            bedCount: data[0].bed_count
+            bedCount: data[0].bed_count,
+            chaletGroup: data[0].chalet_group,
           };
 
-          setRooms([...rooms, newRoom]);
-          toast.success(`Tent "${tentName}" created successfully`);
-        }
-      } 
-      // For Chalet type, we handle each room separately but grouped under one chalet
-      else {
-        const newRooms: Room[] = [];
-        const chaletName = `Chalet ${values.chaletNumber}`;
-        
-        // Create each room in the chalet
-        for (const room of values.rooms) {
-          const roomName = `${chaletName}${room.roomNumber ? ` - Room ${room.roomNumber}` : ''}`;
-          
-          const { data, error } = await supabase
-            .from('accommodation_rooms')
-            .insert({
-              name: roomName,
-              capacity: room.capacity,
-              description: values.notes || '',
-              type: 'Chalet',
-              occupied: 0,
-              user_id: user.id,
-              bed_type: room.bedType || 'single',
-              bed_count: room.bedCount || 1,
-              chalet_group: chaletName // Group rooms under the same chalet
-            })
-            .select();
-
-          if (error) throw error;
-
-          if (data && data.length > 0) {
-            const newRoom: Room = {
-              id: data[0].id,
-              name: data[0].name,
-              capacity: data[0].capacity,
-              occupied: 0,
-              description: data[0].description,
-              type: data[0].type || 'Chalet',
-              bedType: data[0].bed_type,
-              bedCount: data[0].bed_count,
-              chaletGroup: data[0].chalet_group
-            };
-
-            newRooms.push(newRoom);
-          }
-        }
-
-        if (newRooms.length > 0) {
-          setRooms([...rooms, ...newRooms]);
-          toast.success(`Chalet ${values.chaletNumber} with ${newRooms.length} room${newRooms.length > 1 ? 's' : ''} created successfully`);
+          setRooms(prevRooms => [...prevRooms, newRoom]);
+          toast.success("Room created successfully");
         }
       }
-      
+
       setIsRoomDialogOpen(false);
     } catch (error) {
-      console.error("Error creating room:", error);
-      toast.error("Failed to create accommodation");
+      console.error("Error saving room:", error);
+      toast.error("Failed to save room");
     }
   };
 
