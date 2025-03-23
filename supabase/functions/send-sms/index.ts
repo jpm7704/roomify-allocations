@@ -23,6 +23,8 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Received request to send SMS to: ${to} for ${name} allocated to ${roomName}`);
+
     // Get API credentials from environment variables
     const apiKey = Deno.env.get('VONAGE_API_KEY');
     const apiSecret = Deno.env.get('VONAGE_API_SECRET');
@@ -57,6 +59,18 @@ serve(async (req) => {
           reject(err);
         } else {
           console.log('SMS sent successfully:', responseData);
+          
+          // Check the messages array for delivery status
+          if (responseData && responseData.messages && responseData.messages.length > 0) {
+            const message = responseData.messages[0];
+            console.log(`Message status: ${message.status}, error code: ${message['error-text'] || 'None'}`);
+            
+            if (message.status !== '0') {
+              reject(new Error(`SMS delivery failed with status: ${message.status}, reason: ${message['error-text'] || 'Unknown'}`));
+              return;
+            }
+          }
+          
           resolve(responseData);
         }
       });

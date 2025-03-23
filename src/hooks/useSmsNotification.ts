@@ -3,6 +3,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export const useSmsNotification = () => {
+  const formatZimbabweanNumber = (phoneNumber: string): string => {
+    // Remove any spaces, dashes, or other non-digit characters
+    let cleaned = phoneNumber.replace(/\D/g, '');
+    
+    // If the number starts with '0', replace it with the Zimbabwe country code '+263'
+    if (cleaned.startsWith('0')) {
+      cleaned = `+263${cleaned.substring(1)}`;
+    } 
+    // If the number doesn't have any international prefix, assume it's a Zimbabwe number
+    else if (!cleaned.startsWith('+')) {
+      cleaned = `+263${cleaned}`;
+    }
+    
+    return cleaned;
+  };
+
   const sendAllocationSms = async (
     phoneNumber: string, 
     personName: string, 
@@ -15,11 +31,9 @@ export const useSmsNotification = () => {
         return;
       }
 
-      // Format the phone number to E.164 format if needed
-      let formattedPhoneNumber = phoneNumber;
-      if (!phoneNumber.startsWith('+')) {
-        formattedPhoneNumber = `+${phoneNumber}`;
-      }
+      // Format the phone number with Zimbabwe country code
+      const formattedPhoneNumber = formatZimbabweanNumber(phoneNumber);
+      console.log(`Formatted phone number: ${formattedPhoneNumber} (original: ${phoneNumber})`);
       
       const { data, error } = await supabase.functions.invoke('send-sms', {
         body: {
