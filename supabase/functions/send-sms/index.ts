@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Vonage } from "npm:@vonage/server-sdk@^3.20.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,57 +24,58 @@ serve(async (req) => {
 
     console.log(`Received request to send SMS to: ${to} for ${name} allocated to ${roomName}`);
 
-    // Get API credentials from environment variables
-    const apiKey = Deno.env.get('VONAGE_API_KEY');
-    const apiSecret = Deno.env.get('VONAGE_API_SECRET');
+    // Get API key from environment variables
+    const apiKey = Deno.env.get('TEXTBELT_API_KEY') || 'textbelt';  // Default to 'textbelt' for testing
     
-    if (!apiKey || !apiSecret) {
-      console.error('Missing Vonage API credentials:', { apiKey: !!apiKey, apiSecret: !!apiSecret });
+    if (!apiKey) {
+      console.error('Missing TextBelt API key');
       return new Response(
         JSON.stringify({ 
-          error: 'Server configuration error: Missing API credentials',
-          details: 'Please ensure VONAGE_API_KEY and VONAGE_API_SECRET are properly set in the Edge Function secrets'
+          error: 'Server configuration error: Missing API key',
+          details: 'Please ensure TEXTBELT_API_KEY is properly set in the Edge Function secrets'
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const vonage = new Vonage({
-      apiKey,
-      apiSecret
-    });
-
     // Format the accommodation type for the message
     const accommodationType = roomType === 'Personal tent' ? 'tent' : 'room';
     
     // Create the message text
-    const from = "SDA Camp";
-    const text = `Hello ${name}, you have been allocated to ${roomName} ${accommodationType} for the SDA Women's Ministry Camp Meeting. Contact the camp office if you have any questions.`;
+    const message = `Hello ${name}, you have been allocated to ${roomName} ${accommodationType} for the SDA Women's Ministry Camp Meeting. Contact the camp office if you have any questions.`;
     
-    console.log(`Attempting to send SMS to ${to}: ${text}`);
+    console.log(`Attempting to send SMS to ${to}: ${message}`);
 
-    // Send the SMS following Vonage's recommended pattern
+    // Prepare the request body
+    const formData = new FormData();
+    formData.append('phone', to);
+    formData.append('message', message);
+    formData.append('key', apiKey);
+
+    // Send the SMS using TextBelt API
     try {
-      const resp = await vonage.sms.send({ to, from, text });
-      console.log('Message sent successfully');
-      console.log('Vonage response:', JSON.stringify(resp));
+      const response = await fetch('https://textbelt.com/text', {
+        method: 'POST',
+        body: formData
+      });
       
-      // Check response details
-      if (resp.messages && resp.messages.length > 0) {
-        const message = resp.messages[0];
-        
-        if (message.status !== '0') {
-          const errorMsg = `SMS delivery failed with status: ${message.status}, reason: ${message['error-text'] || 'Unknown'}`;
-          console.error(errorMsg);
-          return new Response(
-            JSON.stringify({ error: errorMsg }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
+      const data = await response.json();
+      console.log('TextBelt response:', JSON.stringify(data));
+      
+      if (!data.success) {
+        console.error('SMS delivery failed:', data.error || 'Unknown error');
+        return new Response(
+          JSON.stringify({ 
+            error: 'Failed to send SMS', 
+            details: data.error || 'Unknown error' 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
       
+      console.log('Message sent successfully');
       return new Response(
-        JSON.stringify({ success: true, data: resp }),
+        JSON.stringify({ success: true, data }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } catch (err) {

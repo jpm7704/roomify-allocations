@@ -6,7 +6,7 @@ import { useState } from 'react';
 export const useSmsNotification = () => {
   const [sendingStatus, setSendingStatus] = useState<Record<string, boolean>>({});
 
-  const formatZimbabweanNumber = (phoneNumber: string): string => {
+  const formatPhoneNumber = (phoneNumber: string): string => {
     // Remove any spaces, dashes, or other non-digit characters
     let cleaned = phoneNumber.replace(/\D/g, '');
     
@@ -46,8 +46,8 @@ export const useSmsNotification = () => {
         return false;
       }
 
-      // Format the phone number with Zimbabwe country code
-      const formattedPhoneNumber = formatZimbabweanNumber(phoneNumber);
+      // Format the phone number
+      const formattedPhoneNumber = formatPhoneNumber(phoneNumber);
       console.log(`Formatted phone number: ${formattedPhoneNumber} (original: ${phoneNumber})`);
       
       const toastId = `sms-${personId}`;
