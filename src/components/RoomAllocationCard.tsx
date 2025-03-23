@@ -14,13 +14,15 @@ interface RoomAllocationCardProps {
   onRemoveOccupant?: (roomId: string, personId: string) => void;
   onClick?: (roomAllocation: RoomWithOccupants) => void;
   onSendSms?: (roomId: string, personId: string, personName: string, roomName: string, roomType?: string) => void;
+  sendingStatus?: Record<string, boolean>;
 }
 
 const RoomAllocationCard = ({ 
   roomAllocation, 
   onRemoveOccupant, 
   onClick,
-  onSendSms
+  onSendSms,
+  sendingStatus = {}
 }: RoomAllocationCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const isMobile = useIsMobile();
@@ -115,10 +117,13 @@ const RoomAllocationCard = ({
                       )}
                       onClick={(e) => { 
                         e.stopPropagation(); 
-                        onSendSms?.(room.id, person.id, person.name, room.name, room.type); 
+                        if (!sendingStatus[person.id]) {
+                          onSendSms?.(room.id, person.id, person.name, room.name, room.type); 
+                        }
                       }}
+                      disabled={sendingStatus[person.id]}
                     >
-                      <Send className="h-3 w-3" />
+                      <Send className={cn("h-3 w-3", sendingStatus[person.id] && "animate-pulse")} />
                     </Button>
                     
                     <Button

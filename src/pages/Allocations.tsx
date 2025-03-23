@@ -1,4 +1,3 @@
-
 import { useSearchParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import AllocationFormDialog from '@/components/allocation-form/AllocationFormDialog';
@@ -19,7 +18,7 @@ const Allocations = () => {
   const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const roomIdFromUrl = searchParams.get('roomId');
-  const { sendAllocationSms } = useSmsNotification();
+  const { sendAllocationSms, sendingStatus } = useSmsNotification();
   
   const {
     loading,
@@ -86,22 +85,21 @@ const Allocations = () => {
     setSelectedPeople,
     multiSelectMode,
     setMultiSelectMode,
-    (newAllocations) => {},  // We'll use the fetchData function instead
-    (newRooms) => {},  // We'll use the fetchData function instead
-    (newPeople) => {},  // We'll use the fetchData function instead
+    (newAllocations) => {},
+    (newRooms) => {},
+    (newPeople) => {},
     setIsDialogOpen,
     fetchData
   );
 
   const { handleSaveRoom } = useRoomHandlers(
     rooms,
-    (newRooms) => {},  // We'll use the fetchData function instead
+    (newRooms) => {},
     setIsRoomDialogOpen
   );
   
   const handleSendSms = async (allocation) => {
     try {
-      // Fetch the phone number for the person
       const { data, error } = await supabase
         .from('women_attendees')
         .select('phone')
@@ -139,7 +137,6 @@ const Allocations = () => {
   
   const handleSendRoomSms = async (roomId, personId, personName, roomName, roomType = 'Chalet') => {
     try {
-      // Fetch the phone number for the person
       const { data, error } = await supabase
         .from('women_attendees')
         .select('phone')
@@ -153,19 +150,13 @@ const Allocations = () => {
       }
       
       if (data && data.phone) {
-        toast.loading(`Sending SMS to ${personName}...`);
-        const success = await sendAllocationSms(
+        await sendAllocationSms(
           data.phone, 
           personName, 
           roomName,
-          roomType
+          roomType,
+          personId
         );
-        
-        if (success) {
-          toast.success(`SMS sent successfully to ${personName}`);
-        } else {
-          toast.error(`Failed to send SMS to ${personName}`);
-        }
       } else {
         toast.error(`No phone number available for ${personName}`);
       }
@@ -192,6 +183,7 @@ const Allocations = () => {
           onCreateAllocation={handleCreateAllocation}
           hasRooms={rooms.length > 0}
           onSendSms={handleSendRoomSms}
+          sendingStatus={sendingStatus}
         />
 
         <AllocationFormDialog

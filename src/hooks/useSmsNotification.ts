@@ -1,8 +1,11 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useState } from 'react';
 
 export const useSmsNotification = () => {
+  const [sendingStatus, setSendingStatus] = useState<Record<string, boolean>>({});
+
   const formatZimbabweanNumber = (phoneNumber: string): string => {
     // Remove any spaces, dashes, or other non-digit characters
     let cleaned = phoneNumber.replace(/\D/g, '');
@@ -23,17 +26,30 @@ export const useSmsNotification = () => {
     phoneNumber: string, 
     personName: string, 
     roomName: string,
-    roomType: string = 'Chalet'
+    roomType: string = 'Chalet',
+    personId: string = 'unknown' // Adding personId to track sending status
   ) => {
     try {
+      // Prevent multiple sends for the same person
+      if (sendingStatus[personId]) {
+        console.log('Already sending SMS to this person, skipping');
+        return false;
+      }
+
+      // Set sending status for this person
+      setSendingStatus(prev => ({ ...prev, [personId]: true }));
+      
       if (!phoneNumber) {
         console.log('No phone number provided, skipping SMS notification');
-        return;
+        setSendingStatus(prev => ({ ...prev, [personId]: false }));
+        return false;
       }
 
       // Format the phone number with Zimbabwe country code
       const formattedPhoneNumber = formatZimbabweanNumber(phoneNumber);
       console.log(`Formatted phone number: ${formattedPhoneNumber} (original: ${phoneNumber})`);
+      
+      toast.loading(`Sending SMS to ${personName}...`);
       
       const { data, error } = await supabase.functions.invoke('send-sms', {
         body: {
@@ -44,21 +60,28 @@ export const useSmsNotification = () => {
         }
       });
 
+      // Reset sending status regardless of outcome
+      setSendingStatus(prev => ({ ...prev, [personId]: false }));
+
       if (error) {
         console.error('Error sending SMS notification:', error);
-        toast.error('Failed to send SMS notification');
+        toast.dismiss();
+        toast.error(`Failed to send SMS to ${personName}`);
         return false;
       }
 
-      console.log('SMS notification sent successfully:', data);
-      toast.success('Room allocation SMS notification sent');
+      console.log('SMS notification response:', data);
+      toast.dismiss();
+      toast.success(`SMS sent to ${personName}`);
       return true;
     } catch (error) {
       console.error('Exception sending SMS notification:', error);
-      toast.error('Failed to send SMS notification');
+      toast.dismiss();
+      toast.error(`Failed to send SMS to ${personName}`);
+      setSendingStatus(prev => ({ ...prev, [personId]: false }));
       return false;
     }
   };
 
-  return { sendAllocationSms };
+  return { sendAllocationSms, sendingStatus };
 };

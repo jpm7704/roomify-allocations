@@ -30,9 +30,9 @@ serve(async (req) => {
     const apiSecret = Deno.env.get('VONAGE_API_SECRET');
     
     if (!apiKey || !apiSecret) {
-      console.error('Missing Vonage API credentials');
+      console.error('Missing Vonage API credentials:', { apiKey: !!apiKey, apiSecret: !!apiSecret });
       return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
+        JSON.stringify({ error: 'Server configuration error: Missing API credentials' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -52,38 +52,39 @@ serve(async (req) => {
     console.log(`Sending SMS to ${to}: ${text}`);
 
     // Send the SMS
-    const result = await new Promise((resolve, reject) => {
-      vonage.sms.send({ to, from, text }, (err: any, responseData: any) => {
+    const responseData = await new Promise((resolve, reject) => {
+      vonage.sms.send({ to, from, text }, (err, data) => {
         if (err) {
-          console.error('Error sending SMS:', err);
+          console.error('Vonage SMS error:', JSON.stringify(err));
           reject(err);
         } else {
-          console.log('SMS sent successfully:', responseData);
+          // Log the full response for debugging
+          console.log('Vonage response:', JSON.stringify(data));
           
-          // Check the messages array for delivery status
-          if (responseData && responseData.messages && responseData.messages.length > 0) {
-            const message = responseData.messages[0];
-            console.log(`Message status: ${message.status}, error code: ${message['error-text'] || 'None'}`);
+          if (data.messages && data.messages.length > 0) {
+            const message = data.messages[0];
             
             if (message.status !== '0') {
-              reject(new Error(`SMS delivery failed with status: ${message.status}, reason: ${message['error-text'] || 'Unknown'}`));
+              const errorMsg = `SMS delivery failed with status: ${message.status}, reason: ${message['error-text'] || 'Unknown'}`;
+              console.error(errorMsg);
+              reject(new Error(errorMsg));
               return;
             }
           }
           
-          resolve(responseData);
+          resolve(data);
         }
       });
     });
 
     return new Response(
-      JSON.stringify({ success: true, result }),
+      JSON.stringify({ success: true, data: responseData }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error in send-sms function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || 'Unknown error occurred' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
