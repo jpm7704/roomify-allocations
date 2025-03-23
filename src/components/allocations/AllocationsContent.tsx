@@ -12,6 +12,7 @@ interface AllocationsContentProps {
   onCreateRoom: () => void;
   onCreateAllocation: () => void;
   hasRooms: boolean;
+  onSendSms?: (roomId: string, personId: string, personName: string, roomName: string, roomType?: string) => void;
 }
 
 const AllocationsContent = ({
@@ -21,7 +22,8 @@ const AllocationsContent = ({
   onRoomAllocationClick,
   onCreateRoom,
   onCreateAllocation,
-  hasRooms
+  hasRooms,
+  onSendSms
 }: AllocationsContentProps) => {
   const [filteredRoomAllocations, setFilteredRoomAllocations] = useState<RoomWithOccupants[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,6 +55,7 @@ const AllocationsContent = ({
           onCreateRoom={onCreateRoom}
           onCreateAllocation={searchQuery ? handleClearSearch : onCreateAllocation}
           hasRooms={hasRooms}
+          onSendSms={onSendSms}
         />
       </div>
     </>

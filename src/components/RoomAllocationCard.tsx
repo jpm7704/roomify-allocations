@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Building, User, Trash2, CalendarIcon } from 'lucide-react';
+import { Building, User, Trash2, CalendarIcon, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,12 +13,14 @@ interface RoomAllocationCardProps {
   roomAllocation: RoomWithOccupants;
   onRemoveOccupant?: (roomId: string, personId: string) => void;
   onClick?: (roomAllocation: RoomWithOccupants) => void;
+  onSendSms?: (roomId: string, personId: string, personName: string, roomName: string, roomType?: string) => void;
 }
 
 const RoomAllocationCard = ({ 
   roomAllocation, 
   onRemoveOccupant, 
-  onClick
+  onClick,
+  onSendSms
 }: RoomAllocationCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const isMobile = useIsMobile();
@@ -103,20 +105,37 @@ const RoomAllocationCard = ({
                     </div>
                   </div>
                   
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className={cn(
-                      isMobile ? "opacity-100" : "opacity-0 group-hover/item:opacity-100", 
-                      "text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full transition-all duration-300 ease-in-out h-6 w-6 p-0"
-                    )}
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      onRemoveOccupant?.(room.id, person.id); 
-                    }}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className={cn(
+                        isMobile ? "opacity-100" : "opacity-0 group-hover/item:opacity-100", 
+                        "text-teal-500 hover:text-teal-600 hover:bg-teal-50/30 rounded-full transition-all duration-300 ease-in-out h-6 w-6 p-0"
+                      )}
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        onSendSms?.(room.id, person.id, person.name, room.name, room.type); 
+                      }}
+                    >
+                      <Send className="h-3 w-3" />
+                    </Button>
+                    
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className={cn(
+                        isMobile ? "opacity-100" : "opacity-0 group-hover/item:opacity-100", 
+                        "text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full transition-all duration-300 ease-in-out h-6 w-6 p-0"
+                      )}
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        onRemoveOccupant?.(room.id, person.id); 
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

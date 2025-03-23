@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Building, User, Trash2, ArrowRight, CalendarIcon, FileText } from 'lucide-react';
+import { Building, User, Trash2, ArrowRight, CalendarIcon, FileText, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,9 +22,10 @@ interface AllocationCardProps {
   allocation: Allocation;
   onRemove?: (allocationId: string) => void;
   onClick?: (allocation: Allocation) => void;
+  onSendSms?: (allocation: Allocation) => void;
 }
 
-const AllocationCard = ({ allocation, onRemove, onClick }: AllocationCardProps) => {
+const AllocationCard = ({ allocation, onRemove, onClick, onSendSms }: AllocationCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   
   const getInitials = (name: string) => {
@@ -108,15 +109,27 @@ const AllocationCard = ({ allocation, onRemove, onClick }: AllocationCardProps) 
             </span>
           </div>
           
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full transition-all duration-500 ease-in-out"
-            onClick={(e) => { e.stopPropagation(); onRemove?.(allocation.id); }}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Remove
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="teal"
+              className="rounded-full transition-all duration-500 ease-in-out"
+              onClick={(e) => { e.stopPropagation(); onSendSms?.(allocation); }}
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Send SMS
+            </Button>
+            
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full transition-all duration-500 ease-in-out"
+              onClick={(e) => { e.stopPropagation(); onRemove?.(allocation.id); }}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Remove
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

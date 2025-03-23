@@ -11,11 +11,15 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAllocationDialogs } from '@/hooks/useAllocationDialogs';
 import AllocationsHeader from '@/components/allocations/AllocationsHeader';
 import AllocationsContent from '@/components/allocations/AllocationsContent';
+import { useSmsNotification } from '@/hooks/useSmsNotification';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const Allocations = () => {
   const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const roomIdFromUrl = searchParams.get('roomId');
+  const { sendAllocationSms } = useSmsNotification();
   
   const {
     loading,
@@ -95,6 +99,82 @@ const Allocations = () => {
     setIsRoomDialogOpen
   );
   
+  const handleSendSms = async (allocation) => {
+    try {
+      // Fetch the phone number for the person
+      const { data, error } = await supabase
+        .from('women_attendees')
+        .select('phone')
+        .eq('id', allocation.personId)
+        .single();
+        
+      if (error) {
+        console.error(`Error fetching phone for ${allocation.person.name}:`, error);
+        toast.error(`Failed to get phone number for ${allocation.person.name}`);
+        return;
+      }
+      
+      if (data && data.phone) {
+        toast.loading(`Sending SMS to ${allocation.person.name}...`);
+        const success = await sendAllocationSms(
+          data.phone, 
+          allocation.person.name, 
+          allocation.room.name,
+          allocation.room.type || 'Chalet'
+        );
+        
+        if (success) {
+          toast.success(`SMS sent successfully to ${allocation.person.name}`);
+        } else {
+          toast.error(`Failed to send SMS to ${allocation.person.name}`);
+        }
+      } else {
+        toast.error(`No phone number available for ${allocation.person.name}`);
+      }
+    } catch (error) {
+      console.error(`Failed to send notification to ${allocation.person.name}:`, error);
+      toast.error(`Error sending SMS to ${allocation.person.name}`);
+    }
+  };
+  
+  const handleSendRoomSms = async (roomId, personId, personName, roomName, roomType = 'Chalet') => {
+    try {
+      // Fetch the phone number for the person
+      const { data, error } = await supabase
+        .from('women_attendees')
+        .select('phone')
+        .eq('id', personId)
+        .single();
+        
+      if (error) {
+        console.error(`Error fetching phone for ${personName}:`, error);
+        toast.error(`Failed to get phone number for ${personName}`);
+        return;
+      }
+      
+      if (data && data.phone) {
+        toast.loading(`Sending SMS to ${personName}...`);
+        const success = await sendAllocationSms(
+          data.phone, 
+          personName, 
+          roomName,
+          roomType
+        );
+        
+        if (success) {
+          toast.success(`SMS sent successfully to ${personName}`);
+        } else {
+          toast.error(`Failed to send SMS to ${personName}`);
+        }
+      } else {
+        toast.error(`No phone number available for ${personName}`);
+      }
+    } catch (error) {
+      console.error(`Failed to send notification to ${personName}:`, error);
+      toast.error(`Error sending SMS to ${personName}`);
+    }
+  };
+  
   return (
     <Layout>
       <div className="page-container">
@@ -111,6 +191,7 @@ const Allocations = () => {
           onCreateRoom={handleCreateRoom}
           onCreateAllocation={handleCreateAllocation}
           hasRooms={rooms.length > 0}
+          onSendSms={handleSendRoomSms}
         />
 
         <AllocationFormDialog

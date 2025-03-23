@@ -22,6 +22,7 @@ interface AllocationsListProps {
   onCreateRoom: () => void;
   onCreateAllocation: () => void;
   hasRooms: boolean;
+  onSendSms?: (roomId: string, personId: string, personName: string, roomName: string, roomType?: string) => void;
 }
 
 const AllocationsList = ({ 
@@ -32,7 +33,8 @@ const AllocationsList = ({
   onClick,
   onCreateRoom,
   onCreateAllocation,
-  hasRooms
+  hasRooms,
+  onSendSms
 }: AllocationsListProps) => {
   const isMobile = useIsMobile();
   
@@ -98,6 +100,7 @@ const AllocationsList = ({
           roomAllocation={roomAllocation}
           onRemoveOccupant={onRemoveOccupant}
           onClick={onClick}
+          onSendSms={onSendSms}
         />
       ))}
     </div>
