@@ -50,9 +50,18 @@ export const useSmsNotification = () => {
       const formattedPhoneNumber = formatZimbabweanNumber(phoneNumber);
       console.log(`Formatted phone number: ${formattedPhoneNumber} (original: ${phoneNumber})`);
       
-      toast.loading(`Sending SMS to ${personName}...`, { id: `sms-${personId}` });
+      const toastId = `sms-${personId}`;
+      toast.loading(`Sending SMS to ${personName}...`, { id: toastId });
       
-      const { data, error } = await supabase.functions.invoke('send-sms', {
+      // Create a timeout promise
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('SMS request timed out after 10 seconds'));
+        }, 10000); // 10 second timeout
+      });
+      
+      // Create the actual SMS send promise
+      const sendPromise = supabase.functions.invoke('send-sms', {
         body: {
           to: formattedPhoneNumber,
           name: personName,
@@ -60,33 +69,52 @@ export const useSmsNotification = () => {
           roomType: roomType
         }
       });
+      
+      // Race the promises
+      const { data, error } = await Promise.race([
+        sendPromise,
+        timeoutPromise.then(() => {
+          throw new Error('SMS request timed out after 10 seconds');
+        })
+      ]) as any;
 
       // Reset sending status regardless of outcome
       setSendingStatus(prev => ({ ...prev, [personId]: false }));
 
       if (error) {
         console.error('Error sending SMS notification:', error);
-        toast.dismiss(`sms-${personId}`);
-        toast.error(`Failed to send SMS to ${personName}`);
+        toast.dismiss(toastId);
+        if (error.message?.includes('timed out')) {
+          toast.error(`SMS timed out. The server might be busy or there's a network issue.`);
+        } else {
+          toast.error(`Failed to send SMS to ${personName}`);
+        }
         return false;
       }
 
       console.log('SMS notification response:', data);
       
-      if (data.error) {
+      if (data?.error) {
         console.error('SMS service error:', data.error);
-        toast.dismiss(`sms-${personId}`);
+        toast.dismiss(toastId);
         toast.error(`SMS failed: ${data.error}`);
         return false;
       }
       
-      toast.dismiss(`sms-${personId}`);
+      toast.dismiss(toastId);
       toast.success(`SMS sent to ${personName}`);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Exception sending SMS notification:', error);
-      toast.dismiss(`sms-${personId}`);
-      toast.error(`Failed to send SMS to ${personName}`);
+      const toastId = `sms-${personId}`;
+      toast.dismiss(toastId);
+      
+      if (error.message?.includes('timed out')) {
+        toast.error(`SMS request timed out. The network might be slow or the server is busy.`);
+      } else {
+        toast.error(`Failed to send SMS to ${personName}`);
+      }
+      
       setSendingStatus(prev => ({ ...prev, [personId]: false }));
       return false;
     }
